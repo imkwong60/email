@@ -1,0 +1,33 @@
+{
+  "name": "電郵本本 - 質感郵件管家",
+  "short_name": "電郵本本",
+  "description": "極致簡約 · 智慧信箱 - 個人 Gmail 質感管家 PWA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fafafa",
+  "theme_color": "#7c3aed",
+  "lang": "zh-HK",
+  "icons": [
+    {
+      "src": "kumamon-icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "kumamon-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "重要郵件",
+      "url": "./index.html#important",
+      "icons": [{ "src": "kumamon-icon.jpg", "sizes": "96x96" }]
+    }
+  ]
+}

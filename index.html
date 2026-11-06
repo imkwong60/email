@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="電郵本本">
+    <meta name="description" content="極致簡約 · 智慧信箱 - 個人 Gmail 質感管家">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/jpeg" href="kumamon-icon.jpg">
+    <link rel="apple-touch-icon" href="kumamon-icon.jpg">
+    <title>電郵本本 - 質感郵件管家</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'Noto Sans TC', 'system-ui', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',900:'#4c1d95' }
+                    },
+                    animation: {
+                        'slide-down': 'slideDown 0.4s cubic-bezier(0.16,1,0.3,1)',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'pulse-soft': 'pulseSoft 2s cubic-bezier(0.4,0,0.6,1) infinite',
+                    },
+                    keyframes: {
+                        slideDown: { '0%':{transform:'translateY(-100%)',opacity:'0'}, '100%':{transform:'translateY(0)',opacity:'1'} },
+                        fadeIn: { '0%':{opacity:'0'}, '100%':{opacity:'1'} },
+                        pulseSoft: { '0%,100%':{opacity:'1'}, '50%':{opacity:'0.6'} }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar{width:5px;height:5px} ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:#d4d4d8;border-radius:9999px} .dark ::-webkit-scrollbar-thumb{background:#3f3f46}
+        .glass{background:rgba(255,255,255,.82);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)}
+        .dark .glass{background:rgba(24,24,27,.82);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)}
+        .error-banner{background:linear-gradient(135deg,rgba(251,191,36,.15) 0%,rgba(244,63,94,.12) 100%);border:1px solid rgba(251,191,36,.35);box-shadow:0 4px 24px -4px rgba(251,191,36,.15),inset 0 1px 0 rgba(255,255,255,.1)}
+        .dark .error-banner{background:linear-gradient(135deg,rgba(251,191,36,.12) 0%,rgba(244,63,94,.1) 100%);border-color:rgba(251,191,36,.25)}
+        .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        .line-clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+        .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .safe-top{padding-top:env(safe-area-inset-top)} .safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
+    </style>
+</head>
+<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen flex flex-col items-center justify-start transition-colors duration-300 overflow-x-hidden">
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="fixed top-0 left-0 right-0 z-50 hidden animate-slide-down">
+        <div class="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto px-4 pt-3 safe-top">
+            <div class="error-banner glass rounded-2xl px-4 py-3.5 flex items-start gap-3 shadow-lg">
+                <div class="flex-shrink-0 mt-0.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse-soft"></span>
+                        <p id="errorTitle" class="text-sm font-semibold text-amber-900 dark:text-amber-200">同步異常</p>
+                    </div>
+                    <p id="errorMessage" class="text-xs text-amber-800/80 dark:text-amber-300/80 leading-relaxed"></p>
+                </div>
+                <button onclick="dismissErrorBanner()" class="flex-shrink-0 w-7 h-7 rounded-full bg-amber-500/10 hover:bg-amber-500/20 flex items-center justify-center text-amber-700 dark:text-amber-300 transition">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS Install Banner -->
+    <div id="iosInstallBanner" class="fixed bottom-0 left-0 right-0 z-40 hidden animate-fade-in safe-bottom">
+        <div class="max-w-md sm:max-w-lg mx-auto px-4 pb-4">
+            <div class="glass rounded-2xl p-4 shadow-2xl border border-zinc-200/60 dark:border-zinc-700/60 flex items-center gap-3">
+                <img src="kumamon-icon.jpg" alt="App Icon" class="w-12 h-12 rounded-xl shadow-md object-cover">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-zinc-900 dark:text-white">加入主畫面</p>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">點擊分享 →「加入主畫面」以獲得完整體驗與通知</p>
+                </div>
+                <button onclick="dismissIosBanner()" class="text-xs font-medium text-brand-600 dark:text-brand-400 px-3 py-1.5 rounded-lg bg-brand-50 dark:bg-brand-900/40">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen sm:min-h-[90vh] sm:my-6 sm:rounded-3xl sm:shadow-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col overflow-hidden relative transition-all">
+
+        <!-- Header -->
+        <header class="glass sticky top-0 z-30 px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 safe-top">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-2xl overflow-hidden shadow-lg shadow-brand-500/25 ring-2 ring-white/50 dark:ring-zinc-800">
+                        <img src="kumamon-icon.jpg" alt="電郵本本" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h1 class="text-base font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-1.5">
+                            電郵本本
+                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">PWA</span>
+                        </h1>
+                        <p class="text-[10px] text-zinc-500 dark:text-zinc-400">極致簡約 · 智慧信箱</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <!-- Push Subscribe Button -->
+                    <button id="pushBtn" onclick="togglePush()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition relative" title="訂閱推送通知">
+                        <i id="pushIcon" class="fa-solid fa-bell text-xs"></i>
+                        <span id="pushDot" class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-rose-500 hidden"></span>
+                    </button>
+                    <button onclick="triggerSync()" id="syncBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="立即同步">
+                        <i id="syncIcon" class="fa-solid fa-arrows-rotate text-xs"></i>
+                    </button>
+                    <button onclick="toggleSearch()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="搜尋">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </button>
+                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="外觀">
+                        <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div id="searchContainer" class="hidden mb-3 transition-all duration-300">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-zinc-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="搜尋寄件者、標題或關鍵字..." class="w-full pl-9 pr-9 py-2 bg-zinc-100 dark:bg-zinc-800/80 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition">
+                    <button onclick="clearSearch()" class="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-600"><i class="fa-solid fa-xmark text-sm"></i></button>
+                </div>
+            </div>
+
+            <!-- Category Pills + Compose -->
+            <div class="flex space-x-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button onclick="switchTab('important')" id="pill-important" class="pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-circle-exclamation text-[10px]"></i><span>重要</span>
+                    <span id="badge-important" class="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-white/25 min-w-[16px] text-center">0</span>
+                </button>
+                <button onclick="switchTab('transaction')" id="pill-transaction" class="pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-receipt text-[10px]"></i><span>交易</span>
+                    <span id="badge-transaction" class="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-white/25 min-w-[16px] text-center">0</span>
+                </button>
+                <button onclick="switchTab('promotion')" id="pill-promotion" class="pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-ticket text-[10px]"></i><span>著數</span>
+                    <span id="badge-promotion" class="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-white/25 min-w-[16px] text-center">0</span>
+                </button>
+                <button onclick="switchTab('trash')" id="pill-trash" class="pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-trash-can text-[10px]"></i><span>待刪</span>
+                    <span id="badge-trash" class="ml-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-white/25 min-w-[16px] text-center">0</span>
+                </button>
+                <button onclick="switchTab('compose')" id="pill-compose" class="pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all bg-brand-600 text-white shadow-md shadow-brand-500/30">
+                    <i class="fa-solid fa-pen-to-square text-[10px]"></i><span>寄信</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Bulk Actions (hidden on compose) -->
+        <div id="bulkBar" class="px-4 py-2 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-900/50">
+            <span id="listStatus" class="text-[11px] text-zinc-500 dark:text-zinc-400">載入中...</span>
+            <button onclick="confirmClearCategory()" class="text-[11px] font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 flex items-center gap-1 transition">
+                <i class="fa-solid fa-trash-can text-[10px]"></i> 清空此分頁
+            </button>
+        </div>
+
+        <!-- Email List / Compose -->
+        <main class="flex-1 overflow-y-auto p-3 space-y-2.5" id="emailListContainer">
+            <div class="flex flex-col items-center justify-center py-20 text-zinc-400">
+                <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
+                <p class="text-sm">正在載入郵件...</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="glass px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 safe-bottom">
+            <div id="statusText" class="flex items-center gap-1.5">
+                <span id="statusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span id="statusLabel">準備就緒</span>
+            </div>
+            <button id="markAllBtn" onclick="markAllAsRead()" class="hover:text-brand-600 dark:hover:text-brand-400 transition font-medium">全部標為已讀</button>
+        </footer>
+    </div>
+
+    <!-- Email Detail Modal -->
+    <div id="emailModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all opacity-0">
+        <div id="modalContent" class="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[88vh] flex flex-col shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300 overflow-hidden border border-zinc-200 dark:border-zinc-800">
+            <div class="px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-800/40">
+                <div class="flex items-center space-x-3">
+                    <div id="modalAvatar" class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"></div>
+                    <div class="min-w-0">
+                        <h3 id="modalSender" class="font-bold text-sm text-zinc-900 dark:text-white truncate"></h3>
+                        <p id="modalEmail" class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate"></p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-zinc-200/70 dark:bg-zinc-700/70 hover:bg-zinc-300 dark:hover:bg-zinc-600 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-3.5 flex-1">
+                <div class="flex items-center justify-between text-[11px] text-zinc-400">
+                    <span id="modalDate"></span>
+                    <span id="modalCategoryTag" class="px-2 py-0.5 rounded-full font-medium"></span>
+                </div>
+                <h2 id="modalSubject" class="text-base font-bold text-zinc-900 dark:text-white leading-snug"></h2>
+                <div id="modalAttachment" class="hidden flex items-center gap-2 text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-3 py-2 rounded-xl">
+                    <i class="fa-solid fa-paperclip"></i><span>此郵件包含附件</span>
+                </div>
+                <div class="h-px bg-zinc-100 dark:bg-zinc-800"></div>
+                <div id="modalBodyText" class="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-line"></div>
+            </div>
+            <div class="px-5 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-800/40 flex items-center justify-between gap-2">
+                <div class="flex gap-2">
+                    <button id="modalActionBtn" onclick="modalAction()" class="px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-trash-can"></i> <span>刪除 (Gmail)</span>
+                    </button>
+                    <a id="modalGmailLink" href="#" target="_blank" rel="noopener" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-200 transition flex items-center gap-1.5">
+                        <i class="fa-brands fa-google"></i> Gmail
+                    </a>
+                </div>
+                <button onclick="closeModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Clear Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-xs w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 transform scale-95 transition-transform">
+            <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-trash-can text-rose-600 dark:text-rose-400 text-lg"></i>
+            </div>
+            <h3 class="text-center font-bold text-sm text-zinc-900 dark:text-white mb-1">確認清空並刪除？</h3>
+            <p class="text-center text-xs text-zinc-500 dark:text-zinc-400 mb-4">會同時把 Gmail 對應郵件移到垃圾桶（最多 20 封），此操作可在 Gmail 還原。</p>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">取消</button>
+                <button onclick="clearCategory()" class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-medium flex items-center gap-2.5 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">操作成功</span>
+    </div>
+
+    <script>
+        // ========== CONFIG ==========
+        const SUPABASE_URL = 'https://wanknivxcsrasdkkxmfr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhbmtuaXZ4Y3NyYXNka2t4bWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzE4NjcsImV4cCI6MjEwMjkwNzg2N30.tqsFimERtYCxoh8J-8FlqxByWtX2gNnyaGo08jditrs';
+        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/gmail-sync`;
+        // VAPID Public Key（用 npx web-push generate-vapid-keys 產生後填入）
+        const VAPID_PUBLIC_KEY = 'BNtUxRU1oQ_pfnfos06sCxB-wXRAXzd0NuNIm26mv7NQWpAbE8KwBTsBmRQowb1lE-aPVUQ6GiYzVb_F__u30Do ';
+        // 個人自用方案 A：與 Edge Secrets 的 APP_SECRET 相同。
+        // 注意：會出現在前端原始碼，只能擋腳本亂打，擋不住看原始碼的人。
+        // 若要分享給他人使用，應改 Supabase Auth（方案 B）。
+        const APP_SECRET = 'e7k2m9xq4p8w1n6v3r5t0y7u2i4o8a1s';
+        // ============================
+
+        let emails = [];
+        let activeTab = 'important';
+        let searchQuery = '';
+        let currentModalEmailId = null;
+        let isSyncing = false;
+        let pushSubscribed = localStorage.getItem('pushSubscribed') === '1';
+
+        const categoryMeta = {
+            important:  { label:'重要郵件', color:'bg-amber-500 text-white', pillActive:'bg-amber-500 text-white shadow-md shadow-amber-500/30', pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' },
+            transaction:{ label:'交易通知', color:'bg-emerald-500 text-white', pillActive:'bg-emerald-500 text-white shadow-md shadow-emerald-500/30', pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' },
+            promotion:  { label:'著數郵件', color:'bg-purple-500 text-white', pillActive:'bg-purple-500 text-white shadow-md shadow-purple-500/30', pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' },
+            trash:      { label:'待刪除',   color:'bg-rose-500 text-white',   pillActive:'bg-rose-500 text-white shadow-md shadow-rose-500/30',   pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' },
+            compose:    { label:'寄信',     color:'bg-brand-600 text-white',  pillActive:'bg-brand-600 text-white shadow-md shadow-brand-500/30',  pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' }
+        };
+
+        // ========== Init ==========
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('emailModal');
+                if (modal && !modal.classList.contains('hidden')) closeModal();
+                const confirm = document.getElementById('confirmModal');
+                if (confirm && !confirm.classList.contains('hidden')) closeConfirmModal();
+            }
+        });
+
+        window.onload = async function () {
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+            updateThemeIcon();
+            updatePushUI();
+
+            if ('serviceWorker' in navigator) {
+                try { await navigator.serviceWorker.register('./sw.js'); } catch(e) { console.warn(e); }
+            }
+
+            const isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+            const isStandalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            if (isIos && !isStandalone && !localStorage.getItem('iosBannerDismissed')) {
+                setTimeout(() => document.getElementById('iosInstallBanner').classList.remove('hidden'), 1800);
+            }
+
+            await loadEmails();
+            setInterval(() => { if (!document.hidden && activeTab !== 'compose') loadEmails(true); }, 60000);
+        };
+
+        // ========== API ==========
+        async function apiFetch(qs, options = {}) {
+            const url = `${EDGE_FUNCTION_URL}?${qs}`;
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SUPABASE_ANON_KEY,
+                    ...(options.headers || {})
+                }
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || err.message || `HTTP ${res.status}`);
+            }
+            return res.json();
+        }
+
+        async function loadEmails(silent = false) {
+            if (!silent && activeTab !== 'compose') setStatus('載入中...', 'loading');
+            try {
+                const data = await apiFetch('action=list&category=all');
+                emails = data.emails || [];
+                if (data.counts) {
+                    Object.keys(data.counts).forEach(k => {
+                        const el = document.getElementById(`badge-${k}`);
+                        if (el) {
+                            el.innerText = data.counts[k] || 0;
+                            el.dataset.fromServer = '1';
+                        }
+                    });
+                }
+                renderApp();
+                setStatus('已同步', 'ok');
+                dismissErrorBanner();
+            } catch (err) {
+                console.error(err);
+                const cached = localStorage.getItem('cachedEmails');
+                if (cached) { emails = JSON.parse(cached); renderApp(); setStatus('離線快取', 'warn'); }
+                showErrorBanner('連線失敗', err.message || '無法取得郵件');
+            }
+        }
+
+        async function triggerSync() {
+            if (isSyncing) return;
+            isSyncing = true;
+            document.getElementById('syncIcon').classList.add('fa-spin');
+            setStatus('同步中...', 'loading');
+            try {
+                const result = await apiFetch('action=sync', {
+                    method: 'POST',
+                    headers: { 'x-app-secret': APP_SECRET }
+                });
+                showToast(result.message || `同步完成，新增 ${result.added || 0} 封`, 'fa-check text-emerald-400');
+                await loadEmails(true);
+            } catch (err) {
+                showErrorBanner('同步失敗', err.message);
+                showToast('同步失敗', 'fa-triangle-exclamation text-amber-400');
+            } finally {
+                isSyncing = false;
+                document.getElementById('syncIcon').classList.remove('fa-spin');
+            }
+        }
+
+        // ========== Render ==========
+        function renderApp() {
+            if (activeTab === 'compose') {
+                renderCompose();
+                return;
+            }
+            document.getElementById('bulkBar').classList.remove('hidden');
+            document.getElementById('markAllBtn').classList.remove('hidden');
+            renderPills();
+            renderEmailList();
+            localStorage.setItem('cachedEmails', JSON.stringify(emails));
+        }
+
+        function renderPills() {
+            // badges：優先保留 loadEmails 寫入的 server counts；否則用全量 emails 依 category 計算
+            ['important','transaction','promotion','trash','compose'].forEach(key => {
+                const btn = document.getElementById(`pill-${key}`);
+                if (!btn) return;
+                if (key === 'compose') {
+                    btn.className = `pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${activeTab === 'compose' ? categoryMeta.compose.pillActive : categoryMeta.compose.pillInactive}`;
+                    return;
+                }
+                const badge = document.getElementById(`badge-${key}`);
+                if (badge && badge.dataset.fromServer !== '1') {
+                    badge.innerText = emails.filter(e => e.category === key).length;
+                }
+                btn.className = `pill-btn flex items-center space-x-1 px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap transition-all ${activeTab === key ? categoryMeta[key].pillActive : categoryMeta[key].pillInactive}`;
+            });
+        }
+
+        function renderEmailList() {
+            const container = document.getElementById('emailListContainer');
+            let filtered = emails.filter(e => e.category === activeTab);
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(e =>
+                    (e.sender||'').toLowerCase().includes(q) ||
+                    (e.subject||'').toLowerCase().includes(q) ||
+                    (e.snippet||'').toLowerCase().includes(q)
+                );
+            }
+            document.getElementById('listStatus').innerText = filtered.length ? `${filtered.length} 封郵件` : '無郵件';
+            filtered.sort((a,b) => new Date(b.received_at||0) - new Date(a.received_at||0));
+
+            if (!filtered.length) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <div class="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 mb-3 text-2xl"><i class="fa-solid fa-inbox"></i></div>
+                    <h3 class="font-bold text-sm text-zinc-700 dark:text-zinc-300">這裡空空如也</h3>
+                    <p class="text-xs text-zinc-400 mt-1">目前沒有符合條件的${categoryMeta[activeTab]?.label||''}</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(email => {
+                const unread = !email.is_read ? `<span class="w-2 h-2 rounded-full bg-brand-600 flex-shrink-0"></span>` : '';
+                const attach = email.has_attachment ? `<i class="fa-solid fa-paperclip text-zinc-400 text-[10px] ml-1"></i>` : '';
+                const timeStr = formatHKT(email.received_at);
+                const avatarBg = (email.avatar_bg && /^bg-[a-z]+-\d{2,3}$/.test(email.avatar_bg))
+                    ? email.avatar_bg
+                    : getAvatarColor(email.sender || '?');
+                return `<div onclick="openEmail('${email.id}')" class="group bg-white dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-800 hover:border-brand-500/40 p-3.5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl ${avatarBg} flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${(email.sender||'?').charAt(0)}</div>
+                            <div class="min-w-0">
+                                <h4 class="text-xs font-bold text-zinc-900 dark:text-white truncate flex items-center">${escapeHtml(email.sender||'未知')}${attach}</h4>
+                                <span class="text-[10px] text-zinc-400 truncate block">${escapeHtml(email.sender_email||'')}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1.5 flex-shrink-0">
+                            <span class="text-[10px] text-zinc-400 font-medium">${timeStr}</span>${unread}
+                        </div>
+                    </div>
+                    <h3 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-1 group-hover:text-brand-600 transition">${escapeHtml(email.subject||'(無主旨)')}</h3>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5 leading-relaxed">${escapeHtml(email.snippet||'')}</p>
+                    <div class="flex justify-end mt-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40 opacity-0 group-hover:opacity-100 transition-opacity gap-3">
+                        ${email.category === 'trash'
+                            ? `<button onclick="event.stopPropagation(); restoreEmail('${email.id}')" class="text-[10px] text-emerald-600 hover:text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> 還原</button>`
+                            : (email.is_read ? `<button onclick="event.stopPropagation(); deleteEmail('${email.id}')" class="text-[10px] text-rose-500 hover:text-rose-600 flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> 刪除 (Gmail)</button>` : '')
+                        }
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ========== Compose Page ==========
+        function renderCompose() {
+            document.getElementById('bulkBar').classList.add('hidden');
+            document.getElementById('markAllBtn').classList.add('hidden');
+            renderPills();
+            document.getElementById('emailListContainer').innerHTML = `
+                <div class="space-y-4 p-1">
+                    <div class="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 rounded-2xl p-3.5 flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white flex-shrink-0"><i class="fa-solid fa-paper-plane text-sm"></i></div>
+                        <div>
+                            <p class="text-xs font-bold text-brand-800 dark:text-brand-200">直接從 PWA 寄出 Gmail</p>
+                            <p class="text-[11px] text-brand-700/80 dark:text-brand-300/70 mt-0.5">使用你已授權的 Gmail 帳戶發送，郵件會出現在「已傳送」。</p>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">收件人</label>
+                        <input id="composeTo" type="email" placeholder="example@gmail.com" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">主旨</label>
+                        <input id="composeSubject" type="text" placeholder="郵件主旨" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">內容</label>
+                        <textarea id="composeBody" rows="8" placeholder="在此輸入郵件內容..." class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition resize-none"></textarea>
+                    </div>
+                    <button onclick="sendMail()" id="sendBtn" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-brand-500/25">
+                        <i class="fa-solid fa-paper-plane"></i> 立即寄出
+                    </button>
+                </div>`;
+        }
+
+        async function sendMail() {
+            const to = document.getElementById('composeTo').value.trim();
+            const subject = document.getElementById('composeSubject').value.trim();
+            const text = document.getElementById('composeBody').value;
+            if (!to || !subject) {
+                showToast('請填寫收件人與主旨', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            if (!APP_SECRET || APP_SECRET.startsWith('YOUR_')) {
+                showToast('請先在設定中填入 APP_SECRET', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 寄送中...';
+            try {
+                await apiFetch('action=send', {
+                    method: 'POST',
+                    headers: { 'x-app-secret': APP_SECRET },
+                    body: JSON.stringify({ to, subject, text })
+                });
+                showToast('郵件已成功寄出！', 'fa-check text-emerald-400');
+                document.getElementById('composeTo').value = '';
+                document.getElementById('composeSubject').value = '';
+                document.getElementById('composeBody').value = '';
+            } catch (err) {
+                showToast('寄送失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
+                showErrorBanner('寄信失敗', err.message + '（請確認 OAuth 有 gmail.send 權限）');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 立即寄出';
+            }
+        }
+
+        // ========== Push ==========
+        function updatePushUI() {
+            const icon = document.getElementById('pushIcon');
+            const dot = document.getElementById('pushDot');
+            if (pushSubscribed) {
+                icon.className = 'fa-solid fa-bell text-xs text-brand-600';
+                dot.classList.add('hidden');
+            } else {
+                icon.className = 'fa-solid fa-bell-slash text-xs';
+                dot.classList.remove('hidden');
+            }
+        }
+
+        async function togglePush() {
+            if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+                showToast('此裝置不支援推送通知', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const existing = await reg.pushManager.getSubscription();
+
+                // 取消訂閱：真正 unsubscribe + 通知後端刪除
+                if (pushSubscribed || existing) {
+                    if (existing) {
+                        const endpoint = existing.endpoint;
+                        try { await existing.unsubscribe(); } catch (e) { console.warn(e); }
+                        try {
+                            await apiFetch('action=unsubscribe', {
+                                method: 'POST',
+                                body: JSON.stringify({ endpoint })
+                            });
+                        } catch (e) { console.warn('backend unsubscribe', e); }
+                    }
+                    pushSubscribed = false;
+                    localStorage.removeItem('pushSubscribed');
+                    updatePushUI();
+                    showToast('已關閉推送通知', 'fa-bell-slash text-zinc-400');
+                    return;
+                }
+
+                // 訂閱：沒有 VAPID 就不假裝成功
+                if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.startsWith('YOUR_')) {
+                    showToast('尚未設定 VAPID_PUBLIC_KEY，無法完成訂閱', 'fa-triangle-exclamation text-amber-400');
+                    return;
+                }
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') {
+                    showToast('請允許通知權限', 'fa-triangle-exclamation text-amber-400');
+                    return;
+                }
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+                await apiFetch('action=subscribe', {
+                    method: 'POST',
+                    body: JSON.stringify(sub.toJSON())
+                });
+                pushSubscribed = true;
+                localStorage.setItem('pushSubscribed', '1');
+                updatePushUI();
+                showToast('推送通知已開啟！', 'fa-bell text-emerald-400');
+            } catch (err) {
+                console.error(err);
+                showToast('推送操作失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+            return outputArray;
+        }
+
+        // ========== Actions ==========
+        function switchTab(tab) {
+            activeTab = tab;
+            // 資料契約：emails 永遠是全量，切 tab 只做本地過濾/渲染
+            if (tab === 'compose') {
+                const sc = document.getElementById('searchContainer');
+                if (sc) sc.classList.add('hidden');
+                searchQuery = '';
+                const si = document.getElementById('searchInput');
+                if (si) si.value = '';
+                renderCompose();
+            } else {
+                renderApp();
+            }
+        }
+
+        function openEmail(id) {
+            const email = emails.find(e => e.id === id);
+            if (!email) return;
+            currentModalEmailId = id;
+            if (!email.is_read) {
+                email.is_read = true;
+                renderApp();
+                const readId = id;
+                apiFetch(`action=read&id=${encodeURIComponent(readId)}`, { method: 'PATCH' })
+                    .catch(() => {
+                        const fresh = emails.find(x => x.id === readId);
+                        if (fresh) fresh.is_read = false;
+                        renderApp();
+                        showToast('標已讀失敗', 'fa-triangle-exclamation text-amber-400');
+                    });
+            }
+            const safeBg = (email.avatar_bg && /^bg-[a-z]+-\d{2,3}$/.test(email.avatar_bg))
+                ? email.avatar_bg
+                : getAvatarColor(email.sender);
+            document.getElementById('modalAvatar').className = `w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md ${safeBg}`;
+            document.getElementById('modalAvatar').innerText = (email.sender || '?').charAt(0);
+            document.getElementById('modalSender').innerText = email.sender || '未知';
+            document.getElementById('modalEmail').innerText = email.sender_email || '';
+            document.getElementById('modalDate').innerText = formatHKT(email.received_at, true);
+            document.getElementById('modalSubject').innerText = email.subject || '(無主旨)';
+            document.getElementById('modalBodyText').innerText = email.body || email.snippet || '(無內容預覽)';
+            document.getElementById('modalAttachment').classList.toggle('hidden', !email.has_attachment);
+
+            const catTag = document.getElementById('modalCategoryTag');
+            catTag.innerText = categoryMeta[email.category]?.label || email.category;
+            catTag.className = `px-2 py-0.5 rounded-full font-medium text-[10px] ${categoryMeta[email.category]?.color || 'bg-zinc-500 text-white'}`;
+
+            const actionBtn = document.getElementById('modalActionBtn');
+            if (email.category === 'trash') {
+                actionBtn.innerHTML = `<i class="fa-solid fa-rotate-left"></i> <span>還原</span>`;
+                actionBtn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 transition flex items-center gap-1.5';
+                actionBtn.onclick = () => { restoreEmail(id); closeModal(); };
+            } else {
+                actionBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> <span>刪除 (Gmail)</span>`;
+                actionBtn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 hover:bg-rose-200 transition flex items-center gap-1.5';
+                actionBtn.onclick = () => { deleteEmail(id); closeModal(); };
+            }
+
+            document.getElementById('modalGmailLink').href = `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(id)}`;
+
+            const modal = document.getElementById('emailModal');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('translate-y-full');
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('emailModal');
+            const content = document.getElementById('modalContent');
+            modal.classList.add('opacity-0');
+            content.classList.add('translate-y-full');
+            document.body.style.overflow = '';
+            setTimeout(() => { modal.classList.add('hidden'); currentModalEmailId = null; }, 300);
+        }
+
+        async function deleteEmail(id) {
+            const e = emails.find(x => x.id === id);
+            if (!e) return;
+            const prevCat = e.category;
+            const prevTrash = e.is_trashed;
+            if (prevCat !== 'trash') e.prev_category = prevCat;
+            e.category = 'trash';
+            e.is_trashed = true;
+            document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
+            renderApp();
+            try {
+                await apiFetch(`action=delete&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+                showToast('已從 Gmail 移至垃圾桶', 'fa-trash-can text-rose-400');
+            } catch (err) {
+                e.category = prevCat;
+                e.is_trashed = prevTrash;
+                renderApp();
+                showToast('刪除失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
+            }
+        }
+
+        async function restoreEmail(id) {
+            const e = emails.find(x => x.id === id);
+            if (!e) return;
+            const snapshot = { category: e.category, is_trashed: e.is_trashed, prev_category: e.prev_category };
+            e.category = e.prev_category || 'important';
+            e.is_trashed = false;
+            document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
+            renderApp();
+            try {
+                const res = await apiFetch(`action=restore&id=${encodeURIComponent(id)}`, { method: 'PATCH' });
+                // Gmail 已永久刪除：後端回 success:false + purged
+                if (res && res.purged) {
+                    emails = emails.filter(x => x.id !== id);
+                    document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
+                    renderApp();
+                    showToast(res.error || 'Gmail 已無此信，已從本機移除', 'fa-triangle-exclamation text-amber-400');
+                    return;
+                }
+                if (res && res.success === false) {
+                    e.category = snapshot.category;
+                    e.is_trashed = snapshot.is_trashed;
+                    renderApp();
+                    showToast(res.error || '還原失敗', 'fa-triangle-exclamation text-amber-400');
+                    return;
+                }
+                if (res && res.category) e.category = res.category;
+                if (res && res.gmail_untrashed === false) {
+                    showToast('本機已還原，但 Gmail 同步失敗', 'fa-triangle-exclamation text-amber-400');
+                } else {
+                    showToast('已還原', 'fa-rotate-left text-emerald-400');
+                }
+            } catch (err) {
+                e.category = snapshot.category;
+                e.is_trashed = snapshot.is_trashed;
+                renderApp();
+                showToast('還原失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
+            }
+        }
+
+        function confirmClearCategory() {
+            document.getElementById('confirmModal').classList.remove('hidden');
+            requestAnimationFrame(() => {
+                document.getElementById('confirmModal').classList.remove('opacity-0');
+                document.querySelector('#confirmModal > div').classList.remove('scale-95');
+            });
+        }
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('opacity-0');
+            document.querySelector('#confirmModal > div').classList.add('scale-95');
+            setTimeout(() => document.getElementById('confirmModal').classList.add('hidden'), 200);
+        }
+        async function clearCategory() {
+            closeConfirmModal();
+            if (activeTab === 'compose' || activeTab === 'trash') {
+                showToast('此分頁不支援清空', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            const snapshot = emails.map(e => ({ id: e.id, category: e.category, is_trashed: e.is_trashed }));
+            emails.forEach(e => {
+                if (e.category === activeTab) {
+                    e.category = 'trash';
+                    e.is_trashed = true;
+                }
+            });
+            document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
+            renderApp();
+            try {
+                const r = await apiFetch(`action=clear&category=${encodeURIComponent(activeTab)}`, { method: 'DELETE' });
+                // 以伺服器實際成功的為準重載，避免樂觀更新與 Gmail 落差
+                await loadEmails(true);
+                const msg = r.note || `已清空並刪除 ${r.count || 0} 封`;
+                showToast(msg, r.skipped > 0 ? 'fa-triangle-exclamation text-amber-400' : 'fa-check text-emerald-400');
+            } catch (err) {
+                snapshot.forEach(s => {
+                    const e = emails.find(x => x.id === s.id);
+                    if (e) { e.category = s.category; e.is_trashed = s.is_trashed; }
+                });
+                renderApp();
+                showToast('清空失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
+            }
+        }
+
+        async function markAllAsRead() {
+            const snapshot = emails.filter(e => e.category === activeTab).map(e => ({ id: e.id, is_read: e.is_read }));
+            emails.forEach(e => { if (e.category === activeTab) e.is_read = true; });
+            renderApp();
+            try {
+                await apiFetch(`action=readAll&category=${encodeURIComponent(activeTab)}`, { method: 'PATCH' });
+                showToast('已全部標為已讀', 'fa-envelope-open text-brand-400');
+            } catch (err) {
+                snapshot.forEach(s => {
+                    const e = emails.find(x => x.id === s.id);
+                    if (e) e.is_read = s.is_read;
+                });
+                renderApp();
+                showToast('操作失敗', 'fa-triangle-exclamation text-amber-400');
+            }
+        }
+
+        // ========== UI Helpers ==========
+        function toggleSearch() {
+            if (activeTab === 'compose') {
+                showToast('寄信頁面無法搜尋郵件', 'fa-triangle-exclamation text-amber-400');
+                return;
+            }
+            const c = document.getElementById('searchContainer');
+            c.classList.toggle('hidden');
+            if (!c.classList.contains('hidden')) document.getElementById('searchInput').focus();
+            else clearSearch();
+        }
+        function handleSearch(v) {
+            if (activeTab === 'compose') return;
+            searchQuery = v.trim().toLowerCase();
+            renderEmailList();
+        }
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            searchQuery = '';
+            if (activeTab !== 'compose') renderEmailList();
+        }
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcon();
+        }
+        function updateThemeIcon() {
+            document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
+        }
+        function showErrorBanner(title, msg) {
+            document.getElementById('errorTitle').innerText = title;
+            document.getElementById('errorMessage').innerText = msg;
+            document.getElementById('errorBanner').classList.remove('hidden');
+        }
+        function dismissErrorBanner() { document.getElementById('errorBanner').classList.add('hidden'); }
+        function dismissIosBanner() {
+            document.getElementById('iosInstallBanner').classList.add('hidden');
+            localStorage.setItem('iosBannerDismissed', '1');
+        }
+        function setStatus(text, type='ok') {
+            document.getElementById('statusLabel').innerText = text;
+            const dot = document.getElementById('statusDot');
+            dot.className = 'w-1.5 h-1.5 rounded-full ' + (type==='ok'?'bg-emerald-500':type==='loading'?'bg-brand-500 animate-pulse':'bg-amber-500');
+        }
+        function showToast(msg, iconCls='fa-circle-check text-emerald-400') {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            document.getElementById('toastIcon').className = 'fa-solid ' + iconCls;
+            t.classList.remove('translate-y-20','opacity-0','pointer-events-none');
+            setTimeout(() => t.classList.add('translate-y-20','opacity-0','pointer-events-none'), 2800);
+        }
+        function formatHKT(iso, full=false) {
+            if (!iso) return '';
+            try {
+                const d = new Date(iso);
+                const now = new Date();
+                const diff = (now - d) / 1000;
+                if (diff < 86400 && !full) return d.toLocaleTimeString('zh-HK', { timeZone:'Asia/Hong_Kong', hour:'2-digit', minute:'2-digit' });
+                if (diff < 172800 && !full) return '昨日';
+                return d.toLocaleDateString('zh-HK', { timeZone:'Asia/Hong_Kong', month:'numeric', day:'numeric' }) + (full ? ' ' + d.toLocaleTimeString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit'}) : '');
+            } catch { return iso; }
+        }
+        function getAvatarColor(name) {
+            const colors = ['bg-rose-500','bg-orange-500','bg-amber-500','bg-emerald-500','bg-cyan-500','bg-blue-500','bg-indigo-500','bg-purple-500','bg-pink-500'];
+            let h = 0;
+            for (let i=0; i<(name||'').length; i++) h = name.charCodeAt(i) + ((h<<5)-h);
+            return colors[Math.abs(h)%colors.length];
+        }
+        function escapeHtml(str) {
+            return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+    </script>
+</body>
+</html>
