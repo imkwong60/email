@@ -49,26 +49,15 @@
         .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
         .line-clamp-1{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
         .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-        .safe-top{padding-top:max(16px, env(safe-area-inset-top)) !important} .safe-bottom{padding-bottom:max(10px, env(safe-area-inset-bottom)) !important}
-        html,body{height:100%;overflow:hidden}
-        body{-webkit-overflow-scrolling:auto;overscroll-behavior:none}
+        .safe-top{padding-top:max(16px, env(safe-area-inset-top))} .safe-bottom{padding-bottom:max(10px, env(safe-area-inset-bottom))}
+        html,body{height:100%;overflow:hidden} body{-webkit-overflow-scrolling:auto;overscroll-behavior:none}
+        #appHeader{flex-shrink:0;position:relative;z-index:40;transform:translateZ(0);isolation:isolate}
+        #appHeader button{position:relative;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
         #emailListContainer{-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y}
-        #appHeader{flex-shrink:0;position:relative;z-index:40;transform:translateZ(0);will-change:auto;isolation:isolate}
-#appHeader button{position:relative;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-#appHeader .flex.items-center.space-x-1{position:relative;z-index:5}
-@supports (padding: max(0px, env(safe-area-inset-top))){#appHeader{padding-top:max(16px, env(safe-area-inset-top)) !important}}
-        .pull-refresh-indicator{height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:height .18s ease,opacity .18s ease;opacity:0}
-        .pull-refresh-indicator.active{opacity:1}
-        .pull-refresh-spinner{transition:transform .1s linear}
-        @media (min-width:640px){
-            body{overflow:auto}
-            #appShell{height:auto;min-height:90vh}
-        }
-
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased h-[100dvh] flex flex-col items-center justify-start transition-colors duration-300 overflow-hidden overscroll-none">
+<body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen flex flex-col items-center justify-start transition-colors duration-300 overflow-x-hidden">
 
     <!-- Error Banner -->
     <div id="errorBanner" class="fixed top-0 left-0 right-0 z-50 hidden animate-slide-down pointer-events-none">
@@ -144,7 +133,7 @@
     </div>
 
     <!-- Main Container -->
-    <div id="appShell" class="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[100dvh] min-h-0 sm:h-auto sm:min-h-[90vh] sm:my-6 sm:rounded-3xl sm:shadow-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col overflow-hidden relative transition-all">
+    <div class="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen sm:min-h-[90vh] sm:my-6 sm:rounded-3xl sm:shadow-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col overflow-hidden relative transition-all">
 
         <!-- Header -->
         <header id="appHeader" class="glass z-40 px-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 safe-top relative">
@@ -156,18 +145,16 @@
                     <div>
                         <h1 class="text-base font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-1.5">
                             電郵本本
+                            
                         </h1>
                         <p class="text-[10px] text-zinc-500 dark:text-zinc-400">極致簡約 · 智慧信箱</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-1">
                     <!-- Push Subscribe Button -->
-                    <button id="pushBtn" type="button" onclick="togglePush()" aria-label="訂閱推送通知" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition relative" title="訂閱推送通知">
+                    <button id="pushBtn" onclick="togglePush()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition relative" title="訂閱推送通知">
                         <i id="pushIcon" class="fa-solid fa-bell text-xs"></i>
                         <span id="pushDot" class="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-rose-500 hidden"></span>
-                    </button>
-                    <button id="pushTestBtn" onclick="sendTestPush()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="測試推送（需先開啟推送）">
-                        <i class="fa-solid fa-paper-plane text-xs"></i>
                     </button>
                     <button onclick="triggerSync()" id="syncBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="立即同步">
                         <i id="syncIcon" class="fa-solid fa-arrows-rotate text-xs"></i>
@@ -178,8 +165,8 @@
                     <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="外觀">
                         <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
                     </button>
-                    <button onclick="handleLogout()" id="logoutBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="登出">
-                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    <button onclick="switchTab('compose')" id="composeBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="寫新郵件">
+                        <i class="fa-solid fa-pen-to-square text-xs"></i>
                     </button>
                 </div>
             </div>
@@ -226,11 +213,7 @@
         </div>
 
         <!-- Email List / Compose -->
-        <main class="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2.5 touch-pan-y" id="emailListContainer">
-            <div id="pullRefreshIndicator" class="pull-refresh-indicator text-zinc-400 dark:text-zinc-500" aria-hidden="true">
-                <i id="pullRefreshSpinner" class="fa-solid fa-arrow-down text-xs mr-2 pull-refresh-spinner"></i>
-                <span id="pullRefreshText" class="text-[11px]">下拉更新</span>
-            </div>
+        <main class="flex-1 overflow-y-auto p-3 space-y-2.5" id="emailListContainer">
             <div class="flex flex-col items-center justify-center py-20 text-zinc-400">
                 <i class="fa-solid fa-spinner fa-spin text-2xl mb-3"></i>
                 <p class="text-sm">正在載入郵件...</p>
@@ -411,13 +394,9 @@
             }
             updateThemeIcon();
             updatePushUI();
-            initPullToRefresh();
 
             if ('serviceWorker' in navigator) {
-                try {
-                    await navigator.serviceWorker.register('./sw.js');
-                    await navigator.serviceWorker.ready;
-                } catch (e) { console.warn(e); }
+                try { await navigator.serviceWorker.register('./sw.js'); await checkPushStatus(); } catch (e) { console.warn(e); }
             }
 
             const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -433,90 +412,14 @@
 
             const ok = await ensureSession();
             if (ok) {
-                await checkPushStatus(true);
                 await loadEmails();
+                initPullToRefresh();
                 setInterval(() => {
                     if (!document.hidden && activeTab !== 'compose' && session) loadEmails(true);
+                    if (!document.hidden && session) checkPushStatus();
                 }, 60000);
             }
         };
-
-
-        // ========== Pull to Refresh ==========
-        let pullStartY = 0;
-        let pullDistance = 0;
-        let pullTracking = false;
-        let pullRefreshing = false;
-        const PULL_TRIGGER = 72;
-        const PULL_MAX = 112;
-
-        function updatePullIndicator(distance, refreshing = false) {
-            const indicator = document.getElementById('pullRefreshIndicator');
-            const spinner = document.getElementById('pullRefreshSpinner');
-            const text = document.getElementById('pullRefreshText');
-            if (!indicator) return;
-            const d = Math.max(0, Math.min(PULL_MAX, distance));
-            indicator.style.height = refreshing ? '42px' : `${Math.min(42, d * 0.55)}px`;
-            indicator.classList.toggle('active', d > 0 || refreshing);
-            if (spinner) spinner.style.transform = `rotate(${d * 4}deg)`;
-            if (text) text.textContent = refreshing ? '更新中…' : (d >= PULL_TRIGGER ? '放開更新' : '下拉更新');
-        }
-
-        function initPullToRefresh() {
-            const scroller = document.getElementById('emailListContainer');
-            if (!scroller || scroller.dataset.pullBound) return;
-            scroller.dataset.pullBound = '1';
-
-            scroller.addEventListener('touchstart', e => {
-                if (pullRefreshing || activeTab === 'compose') return;
-                if (scroller.scrollTop <= 0) {
-                    pullStartY = e.touches[0].clientY;
-                    pullDistance = 0;
-                    pullTracking = true;
-                }
-            }, { passive: true });
-
-            scroller.addEventListener('touchmove', e => {
-                if (!pullTracking || pullRefreshing) return;
-                const dy = e.touches[0].clientY - pullStartY;
-                if (dy <= 0 || scroller.scrollTop > 0) {
-                    pullTracking = false;
-                    updatePullIndicator(0);
-                    return;
-                }
-                pullDistance = Math.min(PULL_MAX, dy * 0.55);
-                updatePullIndicator(pullDistance);
-                if (e.cancelable) e.preventDefault();
-            }, { passive: false });
-
-            scroller.addEventListener('touchend', async () => {
-                if (!pullTracking) return;
-                pullTracking = false;
-                const shouldRefresh = pullDistance >= PULL_TRIGGER;
-                if (!shouldRefresh) {
-                    pullDistance = 0;
-                    updatePullIndicator(0);
-                    return;
-                }
-
-                pullRefreshing = true;
-                updatePullIndicator(PULL_TRIGGER, true);
-                try {
-                    // Pull-to-refresh 只做同步 + 重新讀取；不改變目前分頁。
-                    await triggerSync();
-                } finally {
-                    pullRefreshing = false;
-                    pullDistance = 0;
-                    updatePullIndicator(0);
-                }
-            }, { passive: true });
-
-            scroller.addEventListener('touchcancel', () => {
-                pullTracking = false;
-                pullDistance = 0;
-                if (!pullRefreshing) updatePullIndicator(0);
-            }, { passive: true });
-        }
 
         // ========== API（帶使用者 JWT） ==========
         async function apiFetch(qs, options = {}) {
@@ -575,7 +478,34 @@
             }
         }
 
-        async function triggerSync() {
+        let pullStartY = 0;
+        let pullTracking = false;
+        let pullTriggered = false;
+        function initPullToRefresh() {
+            const container = document.getElementById('emailListContainer');
+            if (!container || container.dataset.pullBound) return;
+            container.dataset.pullBound = '1';
+            container.addEventListener('touchstart', (e) => {
+                if (activeTab === 'compose' || container.scrollTop > 0 || isSyncing) return;
+                pullStartY = e.touches[0].clientY;
+                pullTracking = true;
+                pullTriggered = false;
+            }, {passive:true});
+            container.addEventListener('touchmove', (e) => {
+                if (!pullTracking || isSyncing) return;
+                const dy = e.touches[0].clientY - pullStartY;
+                if (dy <= 0) return;
+                if (dy > 10 && e.cancelable) e.preventDefault();
+                if (dy > 70 && !pullTriggered) {
+                    pullTriggered = true;
+                    triggerSync(true);
+                }
+            }, {passive:false});
+            container.addEventListener('touchend', () => { pullTracking = false; pullTriggered = false; }, {passive:true});
+            container.addEventListener('touchcancel', () => { pullTracking = false; pullTriggered = false; }, {passive:true});
+        }
+
+        async function triggerSync(fromPull = false) {
             if (isSyncing) return;
             isSyncing = true;
             document.getElementById('syncIcon').classList.add('fa-spin');
@@ -691,7 +621,7 @@
                     <div class="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 rounded-2xl p-3.5 flex items-start gap-3">
                         <div class="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white flex-shrink-0"><i class="fa-solid fa-paper-plane text-sm"></i></div>
                         <div>
-                            <p class="text-xs font-bold text-brand-800 dark:text-brand-200">直接從 PWA 寄出 Gmail</p>
+                            <p class="text-xs font-bold text-brand-800 dark:text-brand-200">直接從電郵本本寄出 Gmail</p>
                             <p class="text-[11px] text-brand-700/80 dark:text-brand-300/70 mt-0.5">使用你已授權的 Gmail 帳戶發送，郵件會出現在「已傳送」。</p>
                         </div>
                     </div>
@@ -726,7 +656,7 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 寄送中...';
             try {
-                await apiFetch('action=send', {
+                await apiFetch('action=sendFromApp', {
                     method: 'POST',
                     body: JSON.stringify({ to, subject, text })
                 });
@@ -747,133 +677,47 @@
         function updatePushUI() {
             const icon = document.getElementById('pushIcon');
             const dot = document.getElementById('pushDot');
-            const testBtn = document.getElementById('pushTestBtn');
             if (pushSubscribed) {
                 icon.className = 'fa-solid fa-bell text-xs text-brand-600';
                 dot.classList.add('hidden');
-                if (testBtn) testBtn.classList.remove('opacity-40');
             } else {
                 icon.className = 'fa-solid fa-bell-slash text-xs';
                 dot.classList.remove('hidden');
-                if (testBtn) testBtn.classList.add('opacity-40');
             }
         }
 
-        async function checkPushStatus(showInvalidToast = false) {
-            const oldFlag = localStorage.getItem('pushSubscribed') === '1';
+        async function checkPushStatus() {
             if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
                 pushSubscribed = false;
                 localStorage.removeItem('pushSubscribed');
                 updatePushUI();
-                return false;
-            }
-            try {
-                const reg = await navigator.serviceWorker.ready;
-                const sub = await reg.pushManager.getSubscription();
-                const perm = Notification.permission;
-
-                if (!sub || perm !== 'granted') {
-                    pushSubscribed = false;
-                    localStorage.removeItem('pushSubscribed');
-                    updatePushUI();
-                    if (oldFlag && showInvalidToast) {
-                        showToast('推送已失效，請重新開啟', 'fa-bell-slash text-amber-400');
-                    }
-                    return false;
-                }
-
-                // 瀏覽器仍有 subscription，再向 server 確認 endpoint 是否仍存在。
-                try {
-                    const health = await apiFetch(`action=push-status&endpoint=${encodeURIComponent(sub.endpoint)}`);
-                    if (!health.registered) {
-                        pushSubscribed = false;
-                        localStorage.removeItem('pushSubscribed');
-                        updatePushUI();
-                        if (oldFlag && showInvalidToast) {
-                            showToast('伺服器上的推送訂閱已失效，請重新開啟', 'fa-bell-slash text-amber-400');
-                        }
-                        return false;
-                    }
-                } catch (e) {
-                    console.warn('push status check failed', e);
-                    // Server 暫時不可達時，不把本機有效 subscription 誤判為失效。
-                }
-
-                pushSubscribed = true;
-                localStorage.setItem('pushSubscribed', '1');
-                updatePushUI();
-                return true;
-            } catch (e) {
-                console.warn('checkPushStatus', e);
-                pushSubscribed = false;
-                updatePushUI();
-                return false;
-            }
-        }
-
-        async function sendTestPush() {
-            if (!pushSubscribed) {
-                showToast('請先開啟推送通知', 'fa-bell-slash text-amber-400');
                 return;
             }
-            const btn = document.getElementById('pushTestBtn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
-            }
             try {
                 const reg = await navigator.serviceWorker.ready;
                 const sub = await reg.pushManager.getSubscription();
-                if (!sub) throw new Error('找不到本機推送訂閱');
-                await apiFetch(`action=test-push&endpoint=${encodeURIComponent(sub.endpoint)}`, { method: 'POST' });
-                showToast('測試推送已發送，請留意通知欄', 'fa-paper-plane text-emerald-400');
-            } catch (err) {
-                await checkPushStatus(true);
-                showToast('測試推送失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i>';
-                }
+                pushSubscribed = !!sub && Notification.permission === 'granted';
+                if (pushSubscribed) localStorage.setItem('pushSubscribed', '1');
+                else localStorage.removeItem('pushSubscribed');
+                updatePushUI();
+            } catch (e) {
+                console.warn('checkPushStatus', e);
             }
-        }
-
-        async function getPushRegistration() {
-            if (!('serviceWorker' in navigator)) throw new Error('此瀏覽器不支援 Service Worker');
-            let reg = await navigator.serviceWorker.getRegistration('./');
-            if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
-            await navigator.serviceWorker.ready;
-            return reg;
         }
 
         async function togglePush() {
-            // 這個函數只負責「按鈕動作」；啟動時的狀態檢查由 checkPushStatus() 負責。
             if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-                showToast('此裝置／瀏覽器不支援推送通知', 'fa-triangle-exclamation text-amber-400');
+                showToast('此裝置不支援推送通知', 'fa-triangle-exclamation text-amber-400');
                 return;
             }
-
-            // iPhone/iPad 的 Web Push 必須由「加入主畫面」的獨立 PWA 使用。
-            const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-            if (isIos && !isStandalone) {
-                showToast('iPhone 推送需要先「加入主畫面」再開啟電郵本本', 'fa-mobile-screen-button text-amber-400');
-                return;
-            }
-
             try {
-                if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.startsWith('YOUR_')) {
-                    throw new Error('尚未設定 VAPID_PUBLIC_KEY');
-                }
-
-                // 先取得瀏覽器真實 subscription。localStorage 絕不決定訂閱／取消。
-                const reg = await getPushRegistration();
+                const reg = await navigator.serviceWorker.ready;
                 const existing = await reg.pushManager.getSubscription();
 
+                // 只以瀏覽器實際 subscription 判斷是否已訂閱；不可使用舊 localStorage 決定取消/訂閱。
                 if (existing) {
                     const endpoint = existing.endpoint;
-                    showToast('正在關閉推送…', 'fa-bell-slash text-zinc-400');
-                    try { await existing.unsubscribe(); } catch (e) { console.warn('unsubscribe local', e); }
+                    try { await existing.unsubscribe(); } catch (e) { console.warn(e); }
                     try {
                         await apiFetch('action=unsubscribe', {
                             method: 'POST',
@@ -887,55 +731,33 @@
                     return;
                 }
 
-                // 最重要：requestPermission 必須盡量直接由按鈕 click 觸發，
-                // 不要先做另一堆非必要 async 工作，避免 iOS 把它視為非使用者操作。
-                let perm = Notification.permission;
-                if (perm === 'denied') {
-                    showToast('通知權限已被拒絕，請到 iPhone「設定 → 通知 → 電郵本本」開啟', 'fa-triangle-exclamation text-amber-400');
+                if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY.startsWith('YOUR_')) {
+                    showToast('尚未設定 VAPID_PUBLIC_KEY，無法完成訂閱', 'fa-triangle-exclamation text-amber-400');
                     return;
                 }
+                const perm = await Notification.requestPermission();
                 if (perm !== 'granted') {
-                    showToast('正在請求通知權限…', 'fa-bell text-brand-500');
-                    perm = await Notification.requestPermission();
-                }
-                if (perm !== 'granted') {
-                    showToast('你未允許通知權限，推送未開啟', 'fa-triangle-exclamation text-amber-400');
+                    showToast('請允許通知權限', 'fa-triangle-exclamation text-amber-400');
                     return;
                 }
-
-                showToast('正在建立推送訂閱…', 'fa-spinner fa-spin text-brand-500');
-                // SW registration 已經由啟動流程完成；這裡再次取得 ready，確保真正有 active worker。
-                const readyReg = await navigator.serviceWorker.ready;
-                const sub = await readyReg.pushManager.subscribe({
+                const sub = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
                 });
-                await apiFetch('action=subscribe', {
+                const result = await apiFetch('action=subscribe', {
                     method: 'POST',
                     body: JSON.stringify(sub.toJSON())
                 });
+                if (!result || result.success !== true) throw new Error(result?.error || '伺服器未確認訂閱');
                 pushSubscribed = true;
                 localStorage.setItem('pushSubscribed', '1');
                 updatePushUI();
                 showToast('推送通知已開啟！', 'fa-bell text-emerald-400');
             } catch (err) {
-                console.error('togglePush', err);
-                pushSubscribed = false;
-                updatePushUI();
-                showToast('推送操作失敗：' + (err?.message || err), 'fa-triangle-exclamation text-amber-400');
+                console.error(err);
+                showToast('推送操作失敗：' + (err.message || err), 'fa-triangle-exclamation text-amber-400');
             }
         }
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-            return outputArray;
-        }
-
-        // ========== Actions ==========
 
         function bindSwipeHandlers() {
             document.querySelectorAll('.swipe-row').forEach(row => {
