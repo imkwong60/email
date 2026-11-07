@@ -56,9 +56,9 @@
 <body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen flex flex-col items-center justify-start transition-colors duration-300 overflow-x-hidden">
 
     <!-- Error Banner -->
-    <div id="errorBanner" class="fixed top-0 left-0 right-0 z-50 hidden animate-slide-down">
+    <div id="errorBanner" class="fixed top-0 left-0 right-0 z-50 hidden animate-slide-down pointer-events-none">
         <div class="max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto px-4 pt-3 safe-top">
-            <div class="error-banner glass rounded-2xl px-4 py-3.5 flex items-start gap-3 shadow-lg">
+            <div class="error-banner glass rounded-2xl px-4 py-3.5 flex items-start gap-3 shadow-lg pointer-events-auto">
                 <div class="flex-shrink-0 mt-0.5">
                     <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center">
                         <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
@@ -94,7 +94,7 @@
 
 
     <!-- Login Overlay -->
-    <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md hidden items-center justify-center p-4">
         <div class="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6">
             <div class="flex items-center gap-3 mb-5">
                 <img src="kumamon-icon.jpg" alt="" class="w-12 h-12 rounded-2xl object-cover shadow-md">
@@ -132,7 +132,7 @@
     <div class="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen sm:min-h-[90vh] sm:my-6 sm:rounded-3xl sm:shadow-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col overflow-hidden relative transition-all">
 
         <!-- Header -->
-        <header class="glass sticky top-0 z-30 px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 safe-top">
+        <header class="glass sticky top-0 z-40 px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800/80 safe-top relative">
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-9 h-9 rounded-2xl overflow-hidden shadow-lg shadow-brand-500/25 ring-2 ring-white/50 dark:ring-zinc-800">
@@ -227,7 +227,7 @@
     </div>
 
     <!-- Email Detail Modal -->
-    <div id="emailModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all opacity-0">
+    <div id="emailModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4 transition-all opacity-0 pointer-events-none">
         <div id="modalContent" class="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[88vh] flex flex-col shadow-2xl transform translate-y-full sm:translate-y-0 transition-transform duration-300 overflow-hidden border border-zinc-200 dark:border-zinc-800">
             <div class="px-5 py-3.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/60 dark:bg-zinc-800/40">
                 <div class="flex items-center space-x-3">
@@ -268,7 +268,7 @@
     </div>
 
     <!-- Confirm Clear Modal -->
-    <div id="confirmModal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4 opacity-0 transition-opacity">
+    <div id="confirmModal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity pointer-events-none">
         <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-xs w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 transform scale-95 transition-transform">
             <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center mx-auto mb-3">
                 <i class="fa-solid fa-trash-can text-rose-600 dark:text-rose-400 text-lg"></i>
@@ -317,12 +317,16 @@
 
         // ========== Auth ==========
         function showLogin() {
-            document.getElementById('loginOverlay').classList.remove('hidden');
-            document.getElementById('loginOverlay').style.display = 'flex';
+            const el = document.getElementById('loginOverlay');
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            el.style.pointerEvents = 'auto';
         }
         function hideLogin() {
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('loginOverlay').style.display = 'none';
+            const el = document.getElementById('loginOverlay');
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+            el.style.pointerEvents = 'none';
         }
 
         async function handleLogin(e) {
@@ -723,30 +727,80 @@
                 const content = row.querySelector('.swipe-content');
                 const act = row.querySelector('.swipe-actions');
                 if (!content) return;
-                let startX = 0, dx = 0, dragging = false;
                 const id = row.dataset.id;
+                const email = () => emails.find(x => x.id === id);
+                const isTrash = () => email()?.category === 'trash';
+                if (act) {
+                    act.textContent = isTrash() ? '還原' : '刪除';
+                    act.className = isTrash()
+                        ? 'swipe-actions absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-emerald-600 text-white text-xs font-semibold z-0'
+                        : 'swipe-actions absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-rose-600 text-white text-xs font-semibold z-0';
+                }
+                let startX = 0, startY = 0, dx = 0, dragging = false, locked = null;
                 const max = -80;
-                const onStart = (x) => { startX = x; dx = 0; dragging = true; content.style.transition = 'none'; };
-                const onMove = (x) => {
+                const THRESH = -56; // 超過就直接執行刪除／還原
+
+                const onStart = (x, y) => {
+                    startX = x; startY = y; dx = 0; dragging = true; locked = null;
+                    content.style.transition = 'none';
+                };
+                const onMove = (x, y, e) => {
                     if (!dragging) return;
-                    dx = Math.min(0, Math.max(max, x - startX));
+                    const adx = x - startX, ady = y - startY;
+                    if (locked === null && (Math.abs(adx) > 8 || Math.abs(ady) > 8)) {
+                        locked = Math.abs(adx) > Math.abs(ady) ? 'h' : 'v';
+                    }
+                    if (locked === 'v') return;
+                    if (locked === 'h' && e && e.cancelable) e.preventDefault();
+                    dx = Math.min(0, Math.max(max * 1.15, adx));
                     content.style.transform = `translateX(${dx}px)`;
+                };
+                const doAction = () => {
+                    content.style.transition = 'transform 0.15s ease';
+                    content.style.transform = `translateX(${max}px)`;
+                    setTimeout(() => {
+                        if (isTrash()) restoreEmail(id);
+                        else deleteEmail(id);
+                    }, 120);
                 };
                 const onEnd = () => {
                     if (!dragging) return;
                     dragging = false;
                     content.style.transition = 'transform 0.2s ease';
-                    if (dx < -48) content.style.transform = `translateX(${max}px)`;
-                    else { content.style.transform = 'translateX(0)'; dx = 0; }
+                    if (locked === 'h' && dx <= THRESH) {
+                        doAction();
+                    } else if (locked === 'h' && dx < -40) {
+                        content.style.transform = `translateX(${max}px)`; // 露出按鈕等再撳
+                    } else {
+                        content.style.transform = 'translateX(0)';
+                        dx = 0;
+                    }
+                    locked = null;
                 };
-                content.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
-                content.addEventListener('touchmove', e => onMove(e.touches[0].clientX), { passive: true });
+
+                content.addEventListener('touchstart', e => onStart(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+                content.addEventListener('touchmove', e => onMove(e.touches[0].clientX, e.touches[0].clientY, e), { passive: false });
                 content.addEventListener('touchend', onEnd);
+                content.addEventListener('touchcancel', onEnd);
+
+                // 桌面：滑鼠左滑（方便測試）
+                content.addEventListener('mousedown', e => {
+                    if (e.button !== 0) return;
+                    onStart(e.clientX, e.clientY);
+                    const move = (ev) => onMove(ev.clientX, ev.clientY, ev);
+                    const up = () => {
+                        document.removeEventListener('mousemove', move);
+                        document.removeEventListener('mouseup', up);
+                        onEnd();
+                    };
+                    document.addEventListener('mousemove', move);
+                    document.addEventListener('mouseup', up);
+                });
+
                 if (act) {
                     act.onclick = (e) => {
                         e.stopPropagation();
-                        const email = emails.find(x => x.id === id);
-                        if (email && email.category === 'trash') restoreEmail(id);
+                        if (isTrash()) restoreEmail(id);
                         else deleteEmail(id);
                     };
                 }
@@ -816,6 +870,8 @@
             const modal = document.getElementById('emailModal');
             const content = document.getElementById('modalContent');
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.classList.remove('pointer-events-none');
             document.body.style.overflow = 'hidden';
             requestAnimationFrame(() => {
                 modal.classList.remove('opacity-0');
@@ -829,7 +885,12 @@
             modal.classList.add('opacity-0');
             content.classList.add('translate-y-full');
             document.body.style.overflow = '';
-            setTimeout(() => { modal.classList.add('hidden'); currentModalEmailId = null; }, 300);
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                modal.classList.add('pointer-events-none');
+                currentModalEmailId = null;
+            }, 300);
         }
 
         async function deleteEmail(id) {
@@ -894,16 +955,24 @@
         }
 
         function confirmClearCategory() {
-            document.getElementById('confirmModal').classList.remove('hidden');
+            const m = document.getElementById('confirmModal');
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+            m.classList.remove('pointer-events-none');
             requestAnimationFrame(() => {
-                document.getElementById('confirmModal').classList.remove('opacity-0');
+                m.classList.remove('opacity-0');
                 document.querySelector('#confirmModal > div').classList.remove('scale-95');
             });
         }
         function closeConfirmModal() {
-            document.getElementById('confirmModal').classList.add('opacity-0');
+            const m = document.getElementById('confirmModal');
+            m.classList.add('opacity-0');
             document.querySelector('#confirmModal > div').classList.add('scale-95');
-            setTimeout(() => document.getElementById('confirmModal').classList.add('hidden'), 200);
+            setTimeout(() => {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
+                m.classList.add('pointer-events-none');
+            }, 200);
         }
         async function clearCategory() {
             closeConfirmModal();
