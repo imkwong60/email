@@ -51,6 +51,7 @@
         .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
         .safe-top{padding-top:env(safe-area-inset-top)} .safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen flex flex-col items-center justify-start transition-colors duration-300 overflow-x-hidden">
 
@@ -91,6 +92,42 @@
         </div>
     </div>
 
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-6">
+            <div class="flex items-center gap-3 mb-5">
+                <img src="kumamon-icon.jpg" alt="" class="w-12 h-12 rounded-2xl object-cover shadow-md">
+                <div>
+                    <h2 class="text-base font-bold text-zinc-900 dark:text-white">登入電郵本本</h2>
+                    <p class="text-[11px] text-zinc-500">使用 Supabase Auth，僅白名單帳號可進入</p>
+                </div>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-medium text-zinc-500 mb-1 block">Email</label>
+                    <input id="loginEmail" type="email" required autocomplete="username"
+                        class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="you@gmail.com">
+                </div>
+                <div>
+                    <label class="text-[11px] font-medium text-zinc-500 mb-1 block">密碼</label>
+                    <input id="loginPassword" type="password" required autocomplete="current-password"
+                        class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="••••••••">
+                </div>
+                <p id="loginError" class="text-xs text-rose-600 hidden"></p>
+                <button type="submit" id="loginBtn"
+                    class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition">
+                    登入
+                </button>
+            </form>
+            <p class="text-[10px] text-zinc-400 mt-4 leading-relaxed">
+                在 Supabase Dashboard → Authentication 建立使用者；Edge Secrets 設定 ALLOWED_EMAILS 白名單。
+            </p>
+        </div>
+    </div>
+
     <!-- Main Container -->
     <div class="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl min-h-screen sm:min-h-[90vh] sm:my-6 sm:rounded-3xl sm:shadow-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col overflow-hidden relative transition-all">
 
@@ -123,6 +160,9 @@
                     </button>
                     <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="外觀">
                         <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
+                    </button>
+                    <button onclick="handleLogout()" id="logoutBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="登出">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
                     </button>
                 </div>
             </div>
@@ -250,17 +290,16 @@
 
     <script>
         // ========== CONFIG ==========
+        // 填你的 project；EDGE 若實際 slug 是 CHECK 請改路徑
         const SUPABASE_URL = 'https://wanknivxcsrasdkkxmfr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndhbmtuaXZ4Y3NyYXNka2t4bWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzE4NjcsImV4cCI6MjEwMjkwNzg2N30.tqsFimERtYCxoh8J-8FlqxByWtX2gNnyaGo08jditrs';
-        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/gmail-sync`;
-        // VAPID Public Key（用 npx web-push generate-vapid-keys 產生後填入）
+        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/CHECK`; // 你目前實際 slug；若改回 gmail-sync 請改呢行
         const VAPID_PUBLIC_KEY = 'BNtUxRU1oQ_pfnfos06sCxB-wXRAXzd0NuNIm26mv7NQWpAbE8KwBTsBmRQowb1lE-aPVUQ6GiYzVb_F__u30Do ';
-        // 個人自用方案 A：與 Edge Secrets 的 APP_SECRET 相同。
-        // 注意：會出現在前端原始碼，只能擋腳本亂打，擋不住看原始碼的人。
-        // 若要分享給他人使用，應改 Supabase Auth（方案 B）。
-        const APP_SECRET = 'e7k2m9xq4p8w1n6v3r5t0y7u2i4o8a1s';
         // ============================
 
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let session = null; // { access_token, user }
         let emails = [];
         let activeTab = 'important';
         let searchQuery = '';
@@ -276,6 +315,60 @@
             compose:    { label:'寄信',     color:'bg-brand-600 text-white',  pillActive:'bg-brand-600 text-white shadow-md shadow-brand-500/30',  pillInactive:'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300' }
         };
 
+        // ========== Auth ==========
+        function showLogin() {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+        function hideLogin() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errEl = document.getElementById('loginError');
+            const btn = document.getElementById('loginBtn');
+            errEl.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = '登入中...';
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                session = data.session;
+                hideLogin();
+                showToast('登入成功', 'fa-check text-emerald-400');
+                await loadEmails();
+            } catch (err) {
+                errEl.textContent = err.message || '登入失敗';
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登入';
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            session = null;
+            emails = [];
+            showLogin();
+            showToast('已登出', 'fa-right-from-bracket text-zinc-400');
+        }
+
+        async function ensureSession() {
+            const { data } = await supabaseClient.auth.getSession();
+            session = data.session;
+            if (!session) {
+                showLogin();
+                return false;
+            }
+            hideLogin();
+            return true;
+        }
+
         // ========== Init ==========
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -287,38 +380,62 @@
         });
 
         window.onload = async function () {
-            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            if (localStorage.getItem('theme') === 'dark' ||
+                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
             updateThemeIcon();
             updatePushUI();
 
             if ('serviceWorker' in navigator) {
-                try { await navigator.serviceWorker.register('./sw.js'); } catch(e) { console.warn(e); }
+                try { await navigator.serviceWorker.register('./sw.js'); } catch (e) { console.warn(e); }
             }
 
-            const isIos = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-            const isStandalone = navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+            const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
             if (isIos && !isStandalone && !localStorage.getItem('iosBannerDismissed')) {
                 setTimeout(() => document.getElementById('iosInstallBanner').classList.remove('hidden'), 1800);
             }
 
-            await loadEmails();
-            setInterval(() => { if (!document.hidden && activeTab !== 'compose') loadEmails(true); }, 60000);
+            supabaseClient.auth.onAuthStateChange((_event, s) => {
+                session = s;
+                if (!s) showLogin();
+            });
+
+            const ok = await ensureSession();
+            if (ok) {
+                await loadEmails();
+                setInterval(() => {
+                    if (!document.hidden && activeTab !== 'compose' && session) loadEmails(true);
+                }, 60000);
+            }
         };
 
-        // ========== API ==========
+        // ========== API（帶使用者 JWT） ==========
         async function apiFetch(qs, options = {}) {
+            if (!session?.access_token) {
+                const { data } = await supabaseClient.auth.getSession();
+                session = data.session;
+            }
+            if (!session?.access_token) {
+                showLogin();
+                throw new Error('請先登入');
+            }
             const url = `${EDGE_FUNCTION_URL}?${qs}`;
             const res = await fetch(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Authorization': `Bearer ${session.access_token}`,
                     'apikey': SUPABASE_ANON_KEY,
                     ...(options.headers || {})
                 }
             });
+            if (res.status === 401) {
+                showLogin();
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || '登入已過期，請重新登入');
+            }
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err.error || err.message || `HTTP ${res.status}`);
@@ -326,7 +443,7 @@
             return res.json();
         }
 
-        async function loadEmails(silent = false) {
+                async function loadEmails(silent = false) {
             if (!silent && activeTab !== 'compose') setStatus('載入中...', 'loading');
             try {
                 const data = await apiFetch('action=list&category=all');
@@ -357,10 +474,7 @@
             document.getElementById('syncIcon').classList.add('fa-spin');
             setStatus('同步中...', 'loading');
             try {
-                const result = await apiFetch('action=sync', {
-                    method: 'POST',
-                    headers: { 'x-app-secret': APP_SECRET }
-                });
+                const result = await apiFetch('action=sync', { method: 'POST' });
                 showToast(result.message || `同步完成，新增 ${result.added || 0} 封`, 'fa-check text-emerald-400');
                 await loadEmails(true);
             } catch (err) {
@@ -432,7 +546,9 @@
                 const avatarBg = (email.avatar_bg && /^bg-[a-z]+-\d{2,3}$/.test(email.avatar_bg))
                     ? email.avatar_bg
                     : getAvatarColor(email.sender || '?');
-                return `<div onclick="openEmail('${email.id}')" class="group bg-white dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-800 hover:border-brand-500/40 p-3.5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
+                return `<div class="swipe-row relative overflow-hidden rounded-2xl" data-id="${email.id}">
+                    <div class="swipe-actions absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-rose-600 text-white text-xs font-semibold z-0">刪除</div>
+                    <div onclick="openEmail('${email.id}')" class="swipe-content relative z-10 group bg-white dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-800 hover:border-brand-500/40 p-3.5 rounded-2xl shadow-sm hover:shadow-md transition-transform duration-200 cursor-pointer">
                     <div class="flex items-center justify-between mb-1.5">
                         <div class="flex items-center space-x-2.5 min-w-0">
                             <div class="w-8 h-8 rounded-xl ${avatarBg} flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${(email.sender||'?').charAt(0)}</div>
@@ -453,6 +569,7 @@
                             : (email.is_read ? `<button onclick="event.stopPropagation(); deleteEmail('${email.id}')" class="text-[10px] text-rose-500 hover:text-rose-600 flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> 刪除 (Gmail)</button>` : '')
                         }
                     </div>
+                </div>
                 </div>`;
             }).join('');
         }
@@ -487,6 +604,7 @@
                         <i class="fa-solid fa-paper-plane"></i> 立即寄出
                     </button>
                 </div>`;
+            bindSwipeHandlers();
         }
 
         async function sendMail() {
@@ -497,17 +615,12 @@
                 showToast('請填寫收件人與主旨', 'fa-triangle-exclamation text-amber-400');
                 return;
             }
-            if (!APP_SECRET || APP_SECRET.startsWith('YOUR_')) {
-                showToast('請先在設定中填入 APP_SECRET', 'fa-triangle-exclamation text-amber-400');
-                return;
-            }
             const btn = document.getElementById('sendBtn');
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 寄送中...';
             try {
                 await apiFetch('action=send', {
                     method: 'POST',
-                    headers: { 'x-app-secret': APP_SECRET },
                     body: JSON.stringify({ to, subject, text })
                 });
                 showToast('郵件已成功寄出！', 'fa-check text-emerald-400');
@@ -602,6 +715,44 @@
         }
 
         // ========== Actions ==========
+
+        function bindSwipeHandlers() {
+            document.querySelectorAll('.swipe-row').forEach(row => {
+                if (row.dataset.swipeBound) return;
+                row.dataset.swipeBound = '1';
+                const content = row.querySelector('.swipe-content');
+                const act = row.querySelector('.swipe-actions');
+                if (!content) return;
+                let startX = 0, dx = 0, dragging = false;
+                const id = row.dataset.id;
+                const max = -80;
+                const onStart = (x) => { startX = x; dx = 0; dragging = true; content.style.transition = 'none'; };
+                const onMove = (x) => {
+                    if (!dragging) return;
+                    dx = Math.min(0, Math.max(max, x - startX));
+                    content.style.transform = `translateX(${dx}px)`;
+                };
+                const onEnd = () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    content.style.transition = 'transform 0.2s ease';
+                    if (dx < -48) content.style.transform = `translateX(${max}px)`;
+                    else { content.style.transform = 'translateX(0)'; dx = 0; }
+                };
+                content.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+                content.addEventListener('touchmove', e => onMove(e.touches[0].clientX), { passive: true });
+                content.addEventListener('touchend', onEnd);
+                if (act) {
+                    act.onclick = (e) => {
+                        e.stopPropagation();
+                        const email = emails.find(x => x.id === id);
+                        if (email && email.category === 'trash') restoreEmail(id);
+                        else deleteEmail(id);
+                    };
+                }
+            });
+        }
+
         function switchTab(tab) {
             activeTab = tab;
             // 資料契約：emails 永遠是全量，切 tab 只做本地過濾/渲染
@@ -684,20 +835,21 @@
         async function deleteEmail(id) {
             const e = emails.find(x => x.id === id);
             if (!e) return;
-            const prevCat = e.category;
-            const prevTrash = e.is_trashed;
-            if (prevCat !== 'trash') e.prev_category = prevCat;
-            e.category = 'trash';
-            e.is_trashed = true;
+            const snapshot = { ...e };
+            // 樂觀：先從列表移除（唔再搬去待刪）
+            emails = emails.filter(x => x.id !== id);
             document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
             renderApp();
             try {
                 await apiFetch(`action=delete&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-                showToast('已從 Gmail 移至垃圾桶', 'fa-trash-can text-rose-400');
+                showToast('已移入 Gmail 垃圾桶，並從本 App 移除', 'fa-trash-can text-rose-400');
+                try { localStorage.setItem('cachedEmails', JSON.stringify(emails)); } catch (_) {}
             } catch (err) {
-                e.category = prevCat;
-                e.is_trashed = prevTrash;
+                // Gmail 失敗 → 放返列表
+                if (!emails.find(x => x.id === id)) emails.push(snapshot);
+                document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
                 renderApp();
+                showErrorBanner('Gmail 刪除失敗', err.message || '郵件仍在 Gmail 收件箱');
                 showToast('刪除失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
             }
         }
@@ -760,12 +912,7 @@
                 return;
             }
             const snapshot = emails.map(e => ({ id: e.id, category: e.category, is_trashed: e.is_trashed }));
-            emails.forEach(e => {
-                if (e.category === activeTab) {
-                    e.category = 'trash';
-                    e.is_trashed = true;
-                }
-            });
+            emails = emails.filter(e => e.category !== activeTab);
             document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
             renderApp();
             try {
