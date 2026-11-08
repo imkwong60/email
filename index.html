@@ -577,7 +577,7 @@
             }
 
             container.innerHTML = filtered.map(email => {
-                const unread = !email.is_read ? `<span class="w-2 h-2 rounded-full bg-brand-600 flex-shrink-0"></span>` : '';
+                const unread = !email.is_read ? `<span class="px-1.5 py-0.5 rounded-md bg-brand-600 text-white text-[9px] font-bold leading-none">未讀</span>` : `<span class="text-[9px] text-zinc-400">已讀</span>`;
                 const attach = email.has_attachment ? `<i class="fa-solid fa-paperclip text-zinc-400 text-[10px] ml-1"></i>` : '';
                 const timeStr = formatHKT(email.received_at);
                 const avatarBg = (email.avatar_bg && /^bg-[a-z]+-\d{2,3}$/.test(email.avatar_bg))
@@ -585,12 +585,12 @@
                     : getAvatarColor(email.sender || '?');
                 return `<div class="swipe-row relative overflow-hidden rounded-2xl" data-id="${email.id}">
                     <div class="swipe-actions absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-rose-600 text-white text-xs font-semibold z-0">刪除</div>
-                    <div onclick="openEmail('${email.id}')" class="swipe-content relative z-10 group bg-white dark:bg-zinc-800/70 border border-zinc-200/60 dark:border-zinc-800 hover:border-brand-500/40 p-3.5 rounded-2xl shadow-sm hover:shadow-md transition-transform duration-200 cursor-pointer">
+                    <div onclick="openEmail('${email.id}')" class="swipe-content relative z-10 group ${email.is_read ? 'bg-white dark:bg-zinc-800/70 border-zinc-200/60 dark:border-zinc-800' : 'bg-brand-50/70 dark:bg-brand-950/20 border-brand-300/70 dark:border-brand-800/70'} border hover:border-brand-500/40 p-3.5 rounded-2xl shadow-sm hover:shadow-md transition-transform duration-200 cursor-pointer ${email.is_read ? '' : 'border-l-4'}">
                     <div class="flex items-center justify-between mb-1.5">
                         <div class="flex items-center space-x-2.5 min-w-0">
                             <div class="w-8 h-8 rounded-xl ${avatarBg} flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${(email.sender||'?').charAt(0)}</div>
                             <div class="min-w-0">
-                                <h4 class="text-xs font-bold text-zinc-900 dark:text-white truncate flex items-center">${escapeHtml(email.sender||'未知')}${attach}</h4>
+                                <h4 class="text-xs ${email.is_read ? 'font-semibold text-zinc-700 dark:text-zinc-200' : 'font-extrabold text-zinc-950 dark:text-white'} truncate flex items-center">${escapeHtml(email.sender||'未知')}${attach}</h4>
                                 <span class="text-[10px] text-zinc-400 truncate block">${escapeHtml(email.sender_email||'')}</span>
                             </div>
                         </div>
@@ -598,7 +598,7 @@
                             <span class="text-[10px] text-zinc-400 font-medium">${timeStr}</span>${unread}
                         </div>
                     </div>
-                    <h3 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-1 group-hover:text-brand-600 transition">${escapeHtml(email.subject||'(無主旨)')}</h3>
+                    <h3 class="text-xs ${email.is_read ? 'font-medium text-zinc-700 dark:text-zinc-300' : 'font-extrabold text-zinc-950 dark:text-white'} line-clamp-1 group-hover:text-brand-600 transition">${escapeHtml(email.subject||'(無主旨)')}</h3>
                     <p class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-0.5 leading-relaxed">${escapeHtml(email.snippet||'')}</p>
                     <div class="flex justify-end mt-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40 opacity-0 group-hover:opacity-100 transition-opacity gap-3">
                         ${email.category === 'trash'
@@ -620,57 +620,71 @@
                 <div class="space-y-4 p-1">
                     <div class="bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800/40 rounded-2xl p-3.5 flex items-start gap-3">
                         <div class="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white flex-shrink-0"><i class="fa-solid fa-paper-plane text-sm"></i></div>
-                        <div>
-                            <p class="text-xs font-bold text-brand-800 dark:text-brand-200">直接從電郵本本寄出 Gmail</p>
-                            <p class="text-[11px] text-brand-700/80 dark:text-brand-300/70 mt-0.5">使用你已授權的 Gmail 帳戶發送，郵件會出現在「已傳送」。</p>
-                        </div>
+                        <div><p class="text-xs font-bold text-brand-800 dark:text-brand-200">直接從電郵本本寄出 Gmail</p><p class="text-[11px] text-brand-700/80 dark:text-brand-300/70 mt-0.5">可附相片或一般檔案；單一附件最多 20 MB，總附件最多 22 MB。</p></div>
                     </div>
-                    <div>
-                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">收件人</label>
-                        <input id="composeTo" type="email" placeholder="example@gmail.com" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition">
+                    <div><label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">收件人</label><input id="composeTo" type="email" placeholder="example@gmail.com" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition"></div>
+                    <div><label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">主旨</label><input id="composeSubject" type="text" placeholder="郵件主旨" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition"></div>
+                    <div><label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">內容</label><textarea id="composeBody" rows="8" placeholder="在此輸入郵件內容..." class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition resize-none"></textarea></div>
+                    <div class="rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/60 p-3">
+                        <div class="flex items-center justify-between gap-2 mb-2"><span class="text-[11px] font-semibold text-zinc-600 dark:text-zinc-300"><i class="fa-solid fa-paperclip mr-1"></i>附件</span><span id="attachmentSize" class="text-[10px] text-zinc-400">未選擇</span></div>
+                        <input id="composeAttachments" type="file" multiple class="hidden" onchange="renderAttachmentList()" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.csv,.7z,.rar">
+                        <button type="button" onclick="document.getElementById('composeAttachments').click()" class="w-full py-2.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:border-brand-500 hover:text-brand-600 transition"><i class="fa-solid fa-plus mr-1"></i>加入相片 / 檔案</button>
+                        <div id="attachmentList" class="mt-2 space-y-1"></div>
                     </div>
-                    <div>
-                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">主旨</label>
-                        <input id="composeSubject" type="text" placeholder="郵件主旨" class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition">
-                    </div>
-                    <div>
-                        <label class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1 block">內容</label>
-                        <textarea id="composeBody" rows="8" placeholder="在此輸入郵件內容..." class="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-brand-500 rounded-xl text-sm focus:outline-none transition resize-none"></textarea>
-                    </div>
-                    <button onclick="sendMail()" id="sendBtn" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-brand-500/25">
-                        <i class="fa-solid fa-paper-plane"></i> 立即寄出
-                    </button>
+                    <button onclick="sendMail()" id="sendBtn" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-brand-500/25"><i class="fa-solid fa-paper-plane"></i> 立即寄出</button>
                 </div>`;
             bindSwipeHandlers();
+        }
+
+        function formatBytes(n) {
+            if (n < 1024) return `${n} B`;
+            if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+            return `${(n / 1024 / 1024).toFixed(1)} MB`;
+        }
+
+        function renderAttachmentList() {
+            const input = document.getElementById('composeAttachments');
+            const list = document.getElementById('attachmentList');
+            const sizeEl = document.getElementById('attachmentSize');
+            if (!input || !list || !sizeEl) return;
+            const files = Array.from(input.files || []);
+            const total = files.reduce((n, f) => n + f.size, 0);
+            sizeEl.textContent = files.length ? `${files.length} 個 · ${formatBytes(total)}` : '未選擇';
+            list.innerHTML = files.map((f, i) => `<div class="flex items-center gap-2 rounded-xl bg-white dark:bg-zinc-800 px-2.5 py-2 border border-zinc-100 dark:border-zinc-700"><i class="fa-solid ${f.type.startsWith('image/') ? 'fa-image' : 'fa-file'} text-brand-500 text-xs"></i><span class="text-[10px] text-zinc-700 dark:text-zinc-200 truncate flex-1">${escapeHtml(f.name)}</span><span class="text-[9px] text-zinc-400">${formatBytes(f.size)}</span></div>`).join('');
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(reader.error || new Error('讀取附件失敗'));
+                reader.readAsDataURL(file);
+            });
         }
 
         async function sendMail() {
             const to = document.getElementById('composeTo').value.trim();
             const subject = document.getElementById('composeSubject').value.trim();
             const text = document.getElementById('composeBody').value;
-            if (!to || !subject) {
-                showToast('請填寫收件人與主旨', 'fa-triangle-exclamation text-amber-400');
-                return;
-            }
-            const btn = document.getElementById('sendBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 寄送中...';
+            const input = document.getElementById('composeAttachments');
+            const files = Array.from(input?.files || []);
+            const totalBytes = files.reduce((n, f) => n + f.size, 0);
+            if (!to || !subject) { showToast('請填寫收件人與主旨', 'fa-triangle-exclamation text-amber-400'); return; }
+            if (files.length > 10) { showToast('附件最多 10 個', 'fa-triangle-exclamation text-amber-400'); return; }
+            if (files.some(f => f.size > 20 * 1024 * 1024) || totalBytes > 22 * 1024 * 1024) { showToast('附件太大：單一最多 20 MB、總共最多 22 MB', 'fa-triangle-exclamation text-amber-400'); return; }
+            const btn = document.getElementById('sendBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 準備附件...';
             try {
-                await apiFetch('action=sendFromApp', {
-                    method: 'POST',
-                    body: JSON.stringify({ to, subject, text })
-                });
+                const attachments = [];
+                for (const file of files) attachments.push({ filename: file.name, mimeType: file.type || 'application/octet-stream', data: await fileToBase64(file) });
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 寄送中...';
+                await apiFetch('action=sendFromApp', { method: 'POST', body: JSON.stringify({ to, subject, text, attachments }) });
                 showToast('郵件已成功寄出！', 'fa-check text-emerald-400');
-                document.getElementById('composeTo').value = '';
-                document.getElementById('composeSubject').value = '';
-                document.getElementById('composeBody').value = '';
+                document.getElementById('composeTo').value = ''; document.getElementById('composeSubject').value = ''; document.getElementById('composeBody').value = '';
+                if (input) input.value = ''; renderAttachmentList();
             } catch (err) {
                 showToast('寄送失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
                 showErrorBanner('寄信失敗', err.message + '（請確認 OAuth 有 gmail.send 權限）');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 立即寄出';
-            }
+            } finally { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 立即寄出'; }
         }
 
         // ========== Push ==========
@@ -1044,8 +1058,9 @@
             emails.forEach(e => { if (e.category === activeTab) e.is_read = true; });
             renderApp();
             try {
-                await apiFetch(`action=readAll&category=${encodeURIComponent(activeTab)}`, { method: 'PATCH' });
-                showToast('已全部標為已讀', 'fa-envelope-open text-brand-400');
+                const result = await apiFetch(`action=readAll&category=${encodeURIComponent(activeTab)}`, { method: 'PATCH' });
+                await loadEmails(true);
+                showToast(result.remaining ? `已處理，仍有 ${result.remaining} 封未讀` : '已全部標為已讀', 'fa-envelope-open text-brand-400');
             } catch (err) {
                 snapshot.forEach(s => {
                     const e = emails.find(x => x.id === s.id);
