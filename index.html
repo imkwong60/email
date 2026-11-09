@@ -165,8 +165,8 @@
                     <button onclick="toggleSearch()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="搜尋">
                         <i class="fa-solid fa-magnifying-glass text-xs"></i>
                     </button>
-                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="外觀">
-                        <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
+                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="切換外觀" aria-label="切換深色模式">
+                        <i id="themeIcon" class="fa-solid fa-moon fa-fw text-sm"></i>
                     </button>
                     <button onclick="switchTab('compose')" id="composeBtn" class="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 transition" title="寫新郵件">
                         <i class="fa-solid fa-pen-to-square text-xs"></i>
@@ -278,13 +278,13 @@
     <div id="confirmModal" class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity pointer-events-none">
         <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 max-w-xs w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 transform scale-95 transition-transform">
             <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center mx-auto mb-3">
-                <i class="fa-solid fa-trash-can text-rose-600 dark:text-rose-400 text-lg"></i>
+                <i id="confirmModalIcon" class="fa-solid fa-trash-can text-rose-600 dark:text-rose-400 text-lg"></i>
             </div>
-            <h3 class="text-center font-bold text-sm text-zinc-900 dark:text-white mb-1">確認清空並刪除？</h3>
-            <p class="text-center text-xs text-zinc-500 dark:text-zinc-400 mb-4">會同時把 Gmail 對應郵件移到垃圾桶（最多 20 封），此操作可在 Gmail 還原。</p>
+            <h3 id="confirmModalTitle" class="text-center font-bold text-sm text-zinc-900 dark:text-white mb-1">確認刪除？</h3>
+            <p id="confirmModalMsg" class="text-center text-xs text-zinc-500 dark:text-zinc-400 mb-4">會把此郵件移入 Gmail 垃圾桶，可在 Gmail 還原。</p>
             <div class="flex gap-2">
                 <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">取消</button>
-                <button onclick="clearCategory()" class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white">確認刪除</button>
+                <button id="confirmModalOk" class="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white">確認刪除</button>
             </div>
         </div>
     </div>
@@ -639,7 +639,7 @@
                     <div class="flex justify-end mt-2 pt-1.5 border-t border-zinc-100 dark:border-zinc-700/40 opacity-0 group-hover:opacity-100 transition-opacity gap-3">
                         ${email.category === 'trash'
                             ? `<button onclick="event.stopPropagation(); restoreEmail('${email.id}')" class="text-[10px] text-emerald-600 hover:text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> 還原</button>`
-                            : (email.is_read ? `<button onclick="event.stopPropagation(); deleteEmail('${email.id}')" class="text-[10px] text-rose-500 hover:text-rose-600 flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> 刪除 (Gmail)</button>` : '')
+                            : (email.is_read ? `<button onclick="event.stopPropagation(); confirmDeleteEmail('${email.id}')" class="text-[10px] text-rose-500 hover:text-rose-600 flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> 刪除 (Gmail)</button>` : '')
                         }
                     </div>
                 </div>
@@ -868,8 +868,12 @@
                     content.style.transition = 'transform 0.15s ease';
                     content.style.transform = `translateX(${max}px)`;
                     setTimeout(() => {
-                        if (isTrash()) restoreEmail(id);
-                        else deleteEmail(id);
+                        content.style.transform = 'translateX(0)';
+                        if (isTrash()) {
+                            restoreEmail(id);
+                        } else {
+                            confirmDeleteEmail(id);
+                        }
                     }, 120);
                 };
                 const onEnd = () => {
@@ -909,8 +913,9 @@
                 if (act) {
                     act.onclick = (e) => {
                         e.stopPropagation();
+                        content.style.transform = 'translateX(0)';
                         if (isTrash()) restoreEmail(id);
-                        else deleteEmail(id);
+                        else confirmDeleteEmail(id);
                     };
                 }
             });
@@ -975,7 +980,7 @@
             } else {
                 actionBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> <span>刪除 (Gmail)</span>`;
                 actionBtn.className = 'px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 hover:bg-rose-200 transition flex items-center gap-1.5';
-                actionBtn.onclick = () => { deleteEmail(id); closeModal(); };
+                actionBtn.onclick = () => { closeModal(); confirmDeleteEmail(id); };
             }
 
             document.getElementById('modalGmailLink').href = `https://mail.google.com/mail/u/0/#inbox/${encodeURIComponent(id)}`;
@@ -1067,7 +1072,19 @@
             }
         }
 
-        function confirmClearCategory() {
+        let confirmCallback = null;
+
+        function openConfirmModal({ title, msg, okLabel = '確認刪除', onConfirm }) {
+            document.getElementById('confirmModalTitle').innerText = title;
+            document.getElementById('confirmModalMsg').innerText = msg;
+            const okBtn = document.getElementById('confirmModalOk');
+            okBtn.innerText = okLabel;
+            confirmCallback = onConfirm;
+            okBtn.onclick = () => {
+                closeConfirmModal();
+                if (typeof confirmCallback === 'function') confirmCallback();
+                confirmCallback = null;
+            };
             const m = document.getElementById('confirmModal');
             m.classList.remove('hidden');
             m.classList.add('flex');
@@ -1077,6 +1094,27 @@
                 document.querySelector('#confirmModal > div').classList.remove('scale-95');
             });
         }
+
+        function confirmDeleteEmail(id) {
+            const e = emails.find(x => x.id === id);
+            const subject = (e?.subject || '(無主旨)').slice(0, 40);
+            openConfirmModal({
+                title: '確認刪除此郵件？',
+                msg: `「${subject}」會移入 Gmail 垃圾桶，並從本 App 移除。可在 Gmail 還原。`,
+                okLabel: '確認刪除',
+                onConfirm: () => deleteEmail(id),
+            });
+        }
+
+        function confirmClearCategory() {
+            openConfirmModal({
+                title: '確認清空並刪除？',
+                msg: '會同時把 Gmail 對應郵件移到垃圾桶（每批最多約 200 封），此操作可在 Gmail 還原。',
+                okLabel: '確認清空',
+                onConfirm: () => clearCategory(),
+            });
+        }
+
         function closeConfirmModal() {
             const m = document.getElementById('confirmModal');
             m.classList.add('opacity-0');
@@ -1158,7 +1196,14 @@
             updateThemeIcon();
         }
         function updateThemeIcon() {
-            document.getElementById('themeIcon').className = document.documentElement.classList.contains('dark') ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
+            const el = document.getElementById('themeIcon');
+            if (!el) return;
+            // 深色模式顯示太陽（點擊切回淺色）；淺色顯示月亮
+            if (document.documentElement.classList.contains('dark')) {
+                el.className = 'fa-solid fa-sun fa-fw text-sm text-amber-400';
+            } else {
+                el.className = 'fa-solid fa-moon fa-fw text-sm text-zinc-600';
+            }
         }
         function showErrorBanner(title, msg) {
             document.getElementById('errorTitle').innerText = title;
