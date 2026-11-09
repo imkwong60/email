@@ -419,17 +419,37 @@
                 if (!s) showLogin();
             });
 
+            // 離線／上線狀態
+            window.addEventListener('offline', () => {
+                setStatus('離線模式', 'warn');
+                dismissErrorBanner();
+            });
+            window.addEventListener('online', () => {
+                setStatus('已重新連線', 'ok');
+                if (session) loadEmails(true);
+            });
+            if (!navigator.onLine) setStatus('離線模式', 'warn');
+
             const ok = await ensureSession();
             if (ok) {
                 await loadEmails();
                 initPullToRefresh();
                 handleDeepLinkFromUrl();
                 setInterval(() => {
+                    if (!navigator.onLine) return;
                     if (!document.hidden && activeTab !== 'compose' && session) loadEmails(true);
                     if (!document.hidden && session) checkPushStatus();
                 }, 300000);
             }
         };
+
+        function requireOnline(actionLabel) {
+            if (!navigator.onLine) {
+                showToast('需要連線才能' + (actionLabel || '執行此操作'), 'fa-wifi text-amber-400');
+                return false;
+            }
+            return true;
+        }
 
         function openEmailFromDeepLink(emailId) {
             if (!emailId) return;
@@ -542,6 +562,7 @@
         }
 
         async function triggerSync(fromPull = false) {
+            if (!requireOnline('同步')) return;
             if (isSyncing) return;
             isSyncing = true;
             document.getElementById('syncIcon').classList.add('fa-spin');
@@ -649,8 +670,14 @@
         }
 
         // ========== Compose Page ==========
-        // 切走寄信頁時保存草稿，避免 renderCompose 重建 DOM 清掉內容
-        let composeDraft = { to: '', subject: '', body: '' };
+        // 切走寄信頁時保存草稿；並持久化到 localStorage（重整／重開仍在）
+        let composeDraft = (() => {
+            try {
+                const raw = localStorage.getItem('composeDraft');
+                if (raw) return JSON.parse(raw);
+            } catch (_) {}
+            return { to: '', subject: '', body: '' };
+        })();
 
         function saveComposeDraft() {
             const to = document.getElementById('composeTo');
@@ -659,6 +686,7 @@
             if (to) composeDraft.to = to.value;
             if (subject) composeDraft.subject = subject.value;
             if (body) composeDraft.body = body.value;
+            try { localStorage.setItem('composeDraft', JSON.stringify(composeDraft)); } catch (_) {}
         }
 
         function renderCompose() {
@@ -718,6 +746,7 @@
         }
 
         async function sendMail() {
+            if (!requireOnline('寄信')) return;
             const to = document.getElementById('composeTo').value.trim();
             const subject = document.getElementById('composeSubject').value.trim();
             const text = document.getElementById('composeBody').value;
@@ -736,6 +765,7 @@
                 showToast('郵件已成功寄出！', 'fa-check text-emerald-400');
                 document.getElementById('composeTo').value = ''; document.getElementById('composeSubject').value = ''; document.getElementById('composeBody').value = '';
                 composeDraft = { to: '', subject: '', body: '' };
+                try { localStorage.removeItem('composeDraft'); } catch (_) {}
                 if (input) input.value = ''; renderAttachmentList();
             } catch (err) {
                 showToast('寄送失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
@@ -1012,6 +1042,7 @@
         }
 
         async function deleteEmail(id) {
+            if (!requireOnline('刪除郵件')) return;
             const e = emails.find(x => x.id === id);
             if (!e) return;
             const snapshot = { ...e };
@@ -1034,6 +1065,7 @@
         }
 
         async function restoreEmail(id) {
+            if (!requireOnline('還原郵件')) return;
             const e = emails.find(x => x.id === id);
             if (!e) return;
             const snapshot = { category: e.category, is_trashed: e.is_trashed, prev_category: e.prev_category };
@@ -1127,11 +1159,13 @@
         }
         async function clearCategory() {
             closeConfirmModal();
+            if (!requireOnline('清空分頁')) return;
             if (activeTab === 'compose' || activeTab === 'trash') {
                 showToast('此分頁不支援清空', 'fa-triangle-exclamation text-amber-400');
                 return;
             }
-            const snapshot = emails.map(e => ({ id: e.id, category: e.category, is_trashed: e.is_trashed }));
+            // 保留被移除的物件，失敗時直接 concat 回滾（唔能靠 find，因為已被 filter 走）
+            const removed = emails.filter(e => e.category === activeTab);
             emails = emails.filter(e => e.category !== activeTab);
             document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
             renderApp();
@@ -1142,16 +1176,15 @@
                 const msg = r.note || `已清空並刪除 ${r.count || 0} 封`;
                 showToast(msg, r.skipped > 0 ? 'fa-triangle-exclamation text-amber-400' : 'fa-check text-emerald-400');
             } catch (err) {
-                snapshot.forEach(s => {
-                    const e = emails.find(x => x.id === s.id);
-                    if (e) { e.category = s.category; e.is_trashed = s.is_trashed; }
-                });
+                emails = emails.concat(removed);
+                document.querySelectorAll('[id^=badge-]').forEach(el => { delete el.dataset.fromServer; });
                 renderApp();
                 showToast('清空失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
             }
         }
 
         async function markAllAsRead() {
+            if (!requireOnline('標為已讀')) return;
             const snapshot = emails.filter(e => e.category === activeTab).map(e => ({ id: e.id, is_read: e.is_read }));
             emails.forEach(e => { if (e.category === activeTab) e.is_read = true; });
             renderApp();
