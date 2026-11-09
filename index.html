@@ -23,7 +23,10 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'Noto Sans TC', 'system-ui', 'sans-serif'] },
                     colors: {
-                        brand: { 50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',900:'#4c1d95' }
+                        brand: {
+                          50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',300:'#c4b5fd',400:'#a78bfa',
+                          500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',800:'#5b21b6',900:'#4c1d95',950:'#2e1065'
+                        }
                     },
                     animation: {
                         'slide-down': 'slideDown 0.4s cubic-bezier(0.16,1,0.3,1)',
@@ -397,6 +400,12 @@
 
             if ('serviceWorker' in navigator) {
                 try { await navigator.serviceWorker.register('./sw.js'); await checkPushStatus(); } catch (e) { console.warn(e); }
+                // 通知點擊後 SW postMessage → 打開指定郵件
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data?.type === 'OPEN_EMAIL' && event.data.emailId) {
+                        openEmailFromDeepLink(event.data.emailId);
+                    }
+                });
             }
 
             const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -414,12 +423,39 @@
             if (ok) {
                 await loadEmails();
                 initPullToRefresh();
+                handleDeepLinkFromUrl();
                 setInterval(() => {
                     if (!document.hidden && activeTab !== 'compose' && session) loadEmails(true);
                     if (!document.hidden && session) checkPushStatus();
                 }, 300000);
             }
         };
+
+        function openEmailFromDeepLink(emailId) {
+            if (!emailId) return;
+            const tryOpen = (attempt = 0) => {
+                const mail = emails.find(e => e.id === emailId);
+                if (mail) {
+                    if (mail.category && mail.category !== activeTab && activeTab !== 'compose') {
+                        switchTab(mail.category);
+                    }
+                    openEmail(emailId);
+                    return;
+                }
+                if (attempt < 8) setTimeout(() => tryOpen(attempt + 1), 400);
+            };
+            tryOpen();
+        }
+
+        function handleDeepLinkFromUrl() {
+            try {
+                const params = new URLSearchParams(location.search);
+                const emailId = params.get('email');
+                if (!emailId) return;
+                history.replaceState(null, '', location.pathname + (location.hash || ''));
+                openEmailFromDeepLink(emailId);
+            } catch (_) {}
+        }
 
         // ========== API（帶使用者 JWT） ==========
         async function apiFetch(qs, options = {}) {
@@ -609,9 +645,22 @@
                 </div>
                 </div>`;
             }).join('');
+            bindSwipeHandlers();
         }
 
         // ========== Compose Page ==========
+        // 切走寄信頁時保存草稿，避免 renderCompose 重建 DOM 清掉內容
+        let composeDraft = { to: '', subject: '', body: '' };
+
+        function saveComposeDraft() {
+            const to = document.getElementById('composeTo');
+            const subject = document.getElementById('composeSubject');
+            const body = document.getElementById('composeBody');
+            if (to) composeDraft.to = to.value;
+            if (subject) composeDraft.subject = subject.value;
+            if (body) composeDraft.body = body.value;
+        }
+
         function renderCompose() {
             document.getElementById('bulkBar').classList.add('hidden');
             document.getElementById('markAllBtn').classList.add('hidden');
@@ -633,7 +682,13 @@
                     </div>
                     <button onclick="sendMail()" id="sendBtn" class="w-full py-3 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition shadow-lg shadow-brand-500/25"><i class="fa-solid fa-paper-plane"></i> 立即寄出</button>
                 </div>`;
-            bindSwipeHandlers();
+            // 還原草稿（附件無法可靠還原，需重新選擇）
+            const toEl = document.getElementById('composeTo');
+            const subjectEl = document.getElementById('composeSubject');
+            const bodyEl = document.getElementById('composeBody');
+            if (toEl) toEl.value = composeDraft.to || '';
+            if (subjectEl) subjectEl.value = composeDraft.subject || '';
+            if (bodyEl) bodyEl.value = composeDraft.body || '';
         }
 
         function formatBytes(n) {
@@ -680,6 +735,7 @@
                 await apiFetch('action=sendFromApp', { method: 'POST', body: JSON.stringify({ to, subject, text, attachments }) });
                 showToast('郵件已成功寄出！', 'fa-check text-emerald-400');
                 document.getElementById('composeTo').value = ''; document.getElementById('composeSubject').value = ''; document.getElementById('composeBody').value = '';
+                composeDraft = { to: '', subject: '', body: '' };
                 if (input) input.value = ''; renderAttachmentList();
             } catch (err) {
                 showToast('寄送失敗：' + err.message, 'fa-triangle-exclamation text-amber-400');
@@ -861,6 +917,10 @@
         }
 
         function switchTab(tab) {
+            // 離開寄信頁時先保存草稿，避免 DOM 重建後內容消失
+            if (activeTab === 'compose' && tab !== 'compose') {
+                saveComposeDraft();
+            }
             activeTab = tab;
             // 資料契約：emails 永遠是全量，切 tab 只做本地過濾/渲染
             if (tab === 'compose') {
